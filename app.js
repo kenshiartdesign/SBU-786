@@ -1,5 +1,5 @@
 // ============ KONFIGURASI ============
-const API_URL = 'https://script.google.com/macros/s/AKfycbzayKG3ipXxgr7R3uFNPHov_RYAE2WaAoYtsgYtZSV8nQjFCvLpjdZKlQOHusvhg7y7/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyuRZrJdryJhx-aD_W7Pyix8bIGyNMJyy3hbj9eau2C6kbkHlpy9Iluaf6AYZ4M-uUQ/exec';
 let currentUser = null;
 let currentLocation = null;
 let selectedLocations = [];
