@@ -1,5 +1,5 @@
 // ============ KONFIGURASI ============
-const API_URL = 'https://script.google.com/macros/s/XXXX_GANTI_DENGAN_ID_DEPLOY_XXXX/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzayKG3ipXxgr7R3uFNPHov_RYAE2WaAoYtsgYtZSV8nQjFCvLpjdZKlQOHusvhg7y7/exec';
 let currentUser = null;
 let currentLocation = null;
 let selectedLocations = [];
