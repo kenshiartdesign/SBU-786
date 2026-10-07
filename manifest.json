@@ -1,0 +1,25 @@
+{
+  "name": "Absensi PT Sentra Bhakti Utama",
+  "short_name": "SBU Absensi",
+  "description": "Aplikasi Absensi & Operasional Satpam PT Sentra Bhakti Utama",
+  "start_url": "/absensi-sbu/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d47a1",
+  "theme_color": "#0d47a1",
+  "lang": "id-ID",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
