@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#0d47a1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SBU Absensi">
+  <title>Absensi PT Sentra Bhakti Utama</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- =================== PAGE: LOGIN =================== -->
+<div id="page-login">
+  <div style="padding:40px 20px; text-align:center;">
+    <div style="font-size:60px;">🛡️</div>
+    <h1 style="margin:12px 0; color:var(--primary);">PT SENTRA BHAKTI UTAMA</h1>
+    <p style="color:var(--muted); font-size:13px;">Sistem Absensi & Operasional Satpam</p>
+  </div>
+  <div class="card">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Masukkan username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Masukkan password">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">LOGIN</button>
+    <p id="login-error" style="color:var(--danger); font-size:12px; margin-top:10px; text-align:center;"></p>
+  </div>
+</div>
+
+<!-- =================== PAGE: PILIH LOKASI =================== -->
+<div id="page-location" class="hidden">
+  <div class="app-header">
+    <h1>Pilih Lokasi Kerja</h1>
+    <div class="sub">Validasi GPS otomatis</div>
+  </div>
+  <div id="location-list"></div>
+  <div class="card">
+    <button class="btn btn-primary" onclick="validateLocation()">📍 VALIDASI & MASUK</button>
+    <p id="loc-status" style="font-size:12px; margin-top:10px; text-align:center;"></p>
+  </div>
+</div>
+
+<!-- =================== PAGE: DASHBOARD =================== -->
+<div id="page-dashboard" class="hidden">
+  <div class="app-header">
+    <h1 id="dash-greeting">Selamat Datang</h1>
+    <div class="sub" id="dash-loc">Lokasi: -</div>
+  </div>
+
+  <!-- Konten Halaman (hanya 1 yang tampil) -->
+  <div id="content-absen"></div>
+  <div id="content-patroli" class="hidden"></div>
+  <div id="content-kejadian" class="hidden"></div>
+  <div id="content-rekap" class="hidden"></div>
+  <div id="content-info" class="hidden"></div>
+  <div id="content-profil" class="hidden"></div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-page="absen" onclick="switchPage('absen')">
+      <span class="icon">✅</span>Absen
+    </div>
+    <div class="nav-item" data-page="patroli" onclick="switchPage('patroli')">
+      <span class="icon">🚶</span>Patroli
+    </div>
+    <div class="nav-item" data-page="kejadian" onclick="switchPage('kejadian')">
+      <span class="icon">⚠️</span>Kejadian
+    </div>
+    <div class="nav-item" data-page="rekap" onclick="switchPage('rekap')">
+      <span class="icon">📊</span>Rekap
+    </div>
+    <div class="nav-item" data-page="info" onclick="switchPage('info')">
+      <span class="icon">ℹ️</span>Info
+    </div>
+    <div class="nav-item" data-page="profil" onclick="switchPage('profil')">
+      <span class="icon">👤</span>Profil
+    </div>
+  </div>
+</div>
+
+<!-- =================== MODAL: iOS Install =================== -->
+<div id="modal-ios" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 style="margin-bottom:10px;">📲 Pasang Aplikasi</h2>
+    <p style="font-size:14px; line-height:1.6; margin-bottom:16px;">
+      Untuk pengalaman terbaik, silakan pasang aplikasi ini di Home Screen:
+    </p>
+    <ol style="font-size:14px; padding-left:20px; line-height:1.8;">
+      <li>Ketuk ikon <b>Share</b> <span style="font-size:18px;">⎙</span> di bawah Safari</li>
+      <li>Pilih <b>"Add to Home Screen"</b></li>
+      <li>Ketuk <b>"Add"</b></li>
+    </ol>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="closeModalIOS()">Mengerti</button>
+  </div>
+</div>
+
+<!-- =================== MODAL: Kamera =================== -->
+<div id="modal-camera" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 id="camera-title" style="margin-bottom:10px;">Ambil Foto</h2>
+    <div class="camera-box" id="camera-preview">
+      <span>Preview foto akan muncul di sini</span>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-primary" onclick="document.getElementById('camera-input').click()">📷 Ambil Foto</button>
+      <button class="btn btn-success" id="btn-confirm-photo" onclick="confirmPhoto()" disabled>✓ Kirim</button>
+    </div>
+    <button class="btn" style="margin-top:8px; background:#eee;" onclick="closeCamera()">Batal</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+  // Deteksi iOS & paksa modal install
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  if (isIOS && !isStandalone && !localStorage.getItem('ios_install_shown')) {
+    document.getElementById('modal-ios').classList.remove('hidden');
+    localStorage.setItem('ios_install_shown', '1');
+  }
+  function closeModalIOS() {
+    document.getElementById('modal-ios').classList.add('hidden');
+  }
+</script>
+</body>
+</html>
