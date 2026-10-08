@@ -14,13 +14,22 @@
 </head>
 <body>
 
+<!-- CONNECTION STATUS -->
+<div id="connection-status"></div>
+
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
 <!-- GLOBAL LOADER -->
 <div id="global-loader">
   <div class="loader"></div>
-  <p style="color:var(--primary);font-weight:600;">Memproses...</p>
+  <p style="color:var(--primary);font-weight:600;" id="loader-text">Memproses...</p>
+</div>
+
+<!-- IMAGE ZOOM MODAL -->
+<div id="modal-zoom">
+  <button class="close-zoom" onclick="closeZoom()">✕</button>
+  <img id="zoom-img" src="" alt="Zoom">
 </div>
 
 <!-- =================== PAGE: LOGIN =================== -->
@@ -37,7 +46,7 @@
       <label>Password</label>
       <input type="password" id="login-pass" placeholder="Masukkan password" autocomplete="current-password">
     </div>
-    <button class="btn btn-primary" onclick="doLogin()"> LOGIN</button>
+    <button class="btn btn-primary" onclick="doLogin()">🔐 LOGIN</button>
     <p id="login-error" style="color:var(--danger);font-size:12px;margin-top:10px;text-align:center;"></p>
   </div>
 </div>
@@ -60,9 +69,10 @@
   <div class="app-header">
     <h1 id="dash-greeting">Selamat Datang</h1>
     <div class="sub" id="dash-loc">Lokasi: -</div>
+    <button class="emergency-btn" onclick="emergencyAction()">🚨 DARURAT</button>
     <div class="user-info">
-      <div class="avatar">👤</div>
-      <div>
+      <div class="avatar" id="dash-avatar">👤</div>
+      <div style="flex:1;">
         <div style="font-size:13px;font-weight:600;" id="dash-user">-</div>
         <div style="font-size:11px;opacity:.8;" id="dash-time">-</div>
       </div>
@@ -89,13 +99,14 @@
       <span class="icon">⚠️</span>Kejadian
     </div>
     <div class="nav-item" data-page="rekap" onclick="switchPage('rekap')">
-      <span class="icon"></span>Rekap
+      <span class="icon">📊</span>Rekap
     </div>
     <div class="nav-item" data-page="info" onclick="switchPage('info')">
-      <span class="icon">ℹ️</span>Info
+      <span class="icon">️</span>Info
+      <span class="nav-badge hidden" id="info-badge">0</span>
     </div>
     <div class="nav-item" data-page="profil" onclick="switchPage('profil')">
-      <span class="icon">👤</span>Profil
+      <span class="icon"></span>Profil
     </div>
   </div>
 </div>
@@ -120,7 +131,7 @@
     <h2 id="camera-title" style="margin-bottom:10px;color:var(--primary);">Ambil Foto</h2>
     <div class="camera-box" id="camera-preview">
       <div>
-        <div class="camera-icon">📷</div>
+        <div class="camera-icon"></div>
         <div class="camera-text">Tap "Ambil Foto" untuk mulai</div>
       </div>
     </div>
@@ -142,6 +153,18 @@
       <button class="btn btn-outline" onclick="closeConfirm()">Batal</button>
       <button class="btn btn-danger" id="confirm-yes">Ya, Lanjutkan</button>
     </div>
+  </div>
+</div>
+
+<!-- =================== MODAL: Emergency =================== -->
+<div id="modal-emergency" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h2 style="margin-bottom:10px;color:var(--danger);">🚨 Tombol Darurat</h2>
+    <p style="margin-bottom:16px;">Pilih jenis darurat:</p>
+    <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Bahaya Kebakaran')"> Kebakaran</button>
+    <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Tamu Mencurigakan/Bahaya')">⚠️ Ancaman Keamanan</button>
+    <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Kecelakaan/Medis')">🚑 Kecelakaan/Medis</button>
+    <button class="btn btn-outline" onclick="closeEmergency()">Batal</button>
   </div>
 </div>
 
