@@ -87,67 +87,63 @@
   <div id="content-info" class="hidden"></div>
   <div id="content-profil" class="hidden"></div>
 
-<!-- Bottom Nav dengan SVG Icons -->
-<div class="bottom-nav">
-  <div class="nav-item active" data-page="absen" onclick="switchPage('absen')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 11l3 3L22 4"/>
-      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-    </svg>
-    <span>Absen</span>
-  </div>
-  
-  <div class="nav-item" data-page="patroli" onclick="switchPage('patroli')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="5" r="3"/>
-      <path d="M12 8v4"/>
-      <path d="M9 12l-3 9"/>
-      <path d="M15 12l3 9"/>
-      <path d="M9 20h6"/>
-    </svg>
-    <span>Patroli</span>
-  </div>
-  
-  <div class="nav-item" data-page="kejadian" onclick="switchPage('kejadian')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-    <span>Kejadian</span>
-  </div>
-  
-  <div class="nav-item" data-page="rekap" onclick="switchPage('rekap')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/>
-      <line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
-    </svg>
-    <span>Rekap</span>
-  </div>
-  
-  <div class="nav-item" data-page="info" onclick="switchPage('info')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-      <path d="M13.73 21a2 2 0 01-3.46 0"/>
-    </svg>
-    <span class="nav-badge hidden" id="info-badge">0</span>
-    <span>Info</span>
-  </div>
-  
-  <div class="nav-item" data-page="profil" onclick="switchPage('profil')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-      <circle cx="12" cy="7" r="4"/>
-    </svg>
-    <span>Profil</span>
+  <!-- Bottom Nav dengan SVG Icons -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-page="absen" onclick="switchPage('absen')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+      </svg>
+      <span>Absen</span>
+    </div>
+    <div class="nav-item" data-page="patroli" onclick="switchPage('patroli')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="5" r="3"/>
+        <path d="M12 8v4"/>
+        <path d="M9 12l-3 9"/>
+        <path d="M15 12l3 9"/>
+        <path d="M9 20h6"/>
+      </svg>
+      <span>Patroli</span>
+    </div>
+    <div class="nav-item" data-page="kejadian" onclick="switchPage('kejadian')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span>Kejadian</span>
+    </div>
+    <div class="nav-item" data-page="rekap" onclick="switchPage('rekap')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Rekap</span>
+    </div>
+    <div class="nav-item" data-page="info" onclick="switchPage('info')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+      <span class="nav-badge hidden" id="info-badge">0</span>
+      <span>Info</span>
+    </div>
+    <div class="nav-item" data-page="profil" onclick="switchPage('profil')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>Profil</span>
+    </div>
   </div>
 </div>
 
 <!-- =================== MODAL: iOS Install =================== -->
 <div id="modal-ios" class="modal-overlay hidden">
   <div class="modal-box">
-    <h2 style="margin-bottom:10px;color:var(--primary);">📲 Pasang Aplikasi</h2>
+    <h2 style="margin-bottom:10px;color:var(--primary);"> Pasang Aplikasi</h2>
     <p style="font-size:14px;line-height:1.6;margin-bottom:16px;">Untuk pengalaman terbaik, silakan pasang aplikasi ini di Home Screen:</p>
     <ol style="font-size:14px;padding-left:20px;line-height:1.8;">
       <li>Ketuk ikon <b>Share</b> <span style="font-size:18px;">⎙</span> di bawah Safari</li>
@@ -161,16 +157,18 @@
 <!-- =================== MODAL: Kamera =================== -->
 <div id="modal-camera" class="modal-overlay hidden">
   <div class="modal-box">
-    <h2 id="camera-title" style="margin-bottom:10px;color:var(--primary);">Ambil Foto</h2>
+    <h2 id="camera-title" style="margin-bottom:10px;color:var(--primary);">Ambil Foto Selfie</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">📸 Kamera depan akan terbuka otomatis</p>
     <div class="camera-box" id="camera-preview">
       <div>
-        <div class="camera-icon"></div>
-        <div class="camera-text">Tap "Ambil Foto" untuk mulai</div>
+        <div class="camera-icon">🤳</div>
+        <div class="camera-text">Tap "Ambil Foto" untuk selfie</div>
       </div>
     </div>
-    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;">
+    <!-- PERUBAHAN: capture="user" untuk kamera depan/selfie -->
+    <input type="file" id="camera-input" accept="image/*" capture="user" style="display:none;">
     <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary" onclick="document.getElementById('camera-input').click()">📷 Ambil Foto</button>
+      <button class="btn btn-primary" onclick="document.getElementById('camera-input').click()">🤳 Ambil Selfie</button>
       <button class="btn btn-success" id="btn-confirm-photo" onclick="confirmPhoto()" disabled>✓ Kirim</button>
     </div>
     <button class="btn btn-outline" style="margin-top:8px;" onclick="closeCamera()">Batal</button>
@@ -192,9 +190,9 @@
 <!-- =================== MODAL: Emergency =================== -->
 <div id="modal-emergency" class="modal-overlay hidden">
   <div class="modal-box">
-    <h2 style="margin-bottom:10px;color:var(--danger);">🚨 Tombol Darurat</h2>
+    <h2 style="margin-bottom:10px;color:var(--danger);"> Tombol Darurat</h2>
     <p style="margin-bottom:16px;">Pilih jenis darurat:</p>
-    <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Bahaya Kebakaran')"> Kebakaran</button>
+    <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Bahaya Kebakaran')">🔥 Kebakaran</button>
     <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Tamu Mencurigakan/Bahaya')">⚠️ Ancaman Keamanan</button>
     <button class="btn btn-danger" style="margin-bottom:8px;" onclick="sendEmergency('Kecelakaan/Medis')">🚑 Kecelakaan/Medis</button>
     <button class="btn btn-outline" onclick="closeEmergency()">Batal</button>
