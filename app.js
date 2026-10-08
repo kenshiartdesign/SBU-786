@@ -707,13 +707,20 @@ async function loadRekap() {
   const bulan = parseInt($('rekap-bulan').value);
   const tahun = parseInt($('rekap-tahun').value);
   $('rekap-result').innerHTML = '<div style="text-align:center;padding:20px;"><div class="loader" style="margin:0 auto;"></div></div>';
+  
   const res = await api('getRekap', { UserID: currentUser.UserID, Bulan: bulan, Tahun: tahun });
-  if (!res.ok) { $('rekap-result').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div class="text">' + res.message + '</div></div>'; return; }
+  
+  if (!res.ok) { 
+    $('rekap-result').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div class="text">' + res.message + '</div></div>'; 
+    return; 
+  }
+  
   if (!res.data || res.data.length === 0) {
     $('rekap-result').innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="text">Belum ada data absensi</div></div>';
     return;
   }
   
+  // Hitung statistik
   let totalHadir = 0, totalIzin = 0, totalSakit = 0, totalAlpha = 0;
   res.data.forEach(r => {
     if (r.Status === 'Hadir') totalHadir++;
@@ -722,6 +729,7 @@ async function loadRekap() {
     else if (r.Status === 'Alpha') totalAlpha++;
   });
   
+  // Build calendar
   const daysInMonth = new Date(tahun, bulan, 0).getDate();
   const firstDay = new Date(tahun, bulan - 1, 1).getDay();
   const dayNames = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
@@ -748,6 +756,7 @@ async function loadRekap() {
   }
   calendarHtml += '</div>';
   
+  // Build table
   let html = `
     <div class="mini-stats">
       <div class="mini-stat green"><div class="label">Hadir</div><div class="value">${totalHadir}</div></div>
@@ -761,11 +770,24 @@ async function loadRekap() {
     </div>
     <div style="margin-top:16px;">
       <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📋 Detail Harian</div>
-      <table><tr><th>Tgl</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr>
+      <table>
+        <tr>
+          <th>Tgl</th>
+          <th>Masuk</th>
+          <th>Pulang</th>
+          <th>Status</th>
+        </tr>
   `;
+  
   res.data.forEach(r => {
-    html += `<tr><td>${r.Tanggal}</td><td>${r.JamMasuk||'-'}</td><td>${r.JamPulang||'-'}</td><td><span class="badge badge-approved">${r.Status||'Hadir'}</span></td></tr>`;
+    html += `<tr>
+      <td>${r.Tanggal}</td>
+      <td>${r.JamMasuk || '-'}</td>
+      <td>${r.JamPulang || '-'}</td>
+      <td><span class="badge badge-approved">${r.Status || 'Hadir'}</span></td>
+    </tr>`;
   });
+  
   html += '</table></div>';
   $('rekap-result').innerHTML = html;
 }
