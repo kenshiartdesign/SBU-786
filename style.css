@@ -709,3 +709,28 @@ tr:hover { background: #fafafa; }
   display: none;
 }
 .pull-indicator.active { display: block; }
+
+/* Kalender Absensi - Warna Hijau Kalem */
+.calendar-day.hadir {
+  background: #d4edda !important;
+  color: #155724 !important;
+  font-weight: 700;
+  border: 1px solid #c3e6cb;
+}
+
+.calendar-day.hadir:hover {
+  background: #c3e6cb !important;
+}
+
+/* Highlight hari ini */
+.calendar-day.today {
+  border: 2px solid var(--primary) !important;
+  font-weight: 700;
+}
+
+/* Status badge yang lebih jelas */
+.badge-approved {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
