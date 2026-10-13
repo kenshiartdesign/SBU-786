@@ -729,6 +729,96 @@ async function loadRekap() {
     else if (r.Status === 'Alpha') totalAlpha++;
   });
   
+  // Build calendar dengan warna hijau untuk hari hadir
+  const daysInMonth = new Date(tahun, bulan, 0).getDate();
+  const firstDay = new Date(tahun, bulan - 1, 1).getDay();
+  const dayNames = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
+  const statusMap = {};
+  const jamMap = {}; // Simpan jam masuk & pulang
+  
+  res.data.forEach(r => {
+    // Parse tanggal DD-MM-YYYY
+    const tglParts = r.Tanggal.split('-');
+    if (tglParts.length === 3) {
+      const day = parseInt(tglParts[0]);
+      statusMap[day] = r.Status || 'Hadir';
+      jamMap[day] = {
+        masuk: r.JamMasuk || '-',
+        pulang: r.JamPulang || '-'
+      };
+    }
+  });
+  
+  let calendarHtml = '<div class="calendar-grid">';
+  dayNames.forEach(d => { calendarHtml += `<div class="calendar-day-header">${d}</div>`; });
+  for (let i = 0; i < firstDay; i++) { calendarHtml += '<div class="calendar-day empty"></div>'; }
+  const today = new Date();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const status = statusMap[day];
+    const isToday = (today.getDate() === day && today.getMonth() + 1 === bulan && today.getFullYear() === tahun);
+    let cls = 'calendar-day';
+    
+    // WARNA HIJAU KALEM untuk hari hadir
+    if (status === 'Hadir') cls += ' hadir';
+    else if (status === 'Izin') cls += ' izin';
+    else if (status === 'Sakit') cls += ' sakit';
+    else if (status === 'Alpha') cls += ' alpha';
+    
+    if (isToday) cls += ' today';
+    
+    // Tambah tooltip untuk jam
+    const jamInfo = jamMap[day] ? ` title="Masuk: ${jamMap[day].masuk}, Pulang: ${jamMap[day].pulang}"` : '';
+    calendarHtml += `<div class="${cls}"${jamInfo}>${day}</div>`;
+  }
+  calendarHtml += '</div>';
+  
+  // Build table dengan jam yang benar
+  let html = `
+    <div class="mini-stats">
+      <div class="mini-stat green"><div class="label">Hadir</div><div class="value">${totalHadir}</div></div>
+      <div class="mini-stat orange"><div class="label">Izin</div><div class="value">${totalIzin}</div></div>
+      <div class="mini-stat"><div class="label">Sakit</div><div class="value">${totalSakit}</div></div>
+      <div class="mini-stat red"><div class="label">Alpha</div><div class="value">${totalAlpha}</div></div>
+    </div>
+    <div style="margin-top:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;"> Kalender Absensi</div>
+      ${calendarHtml}
+    </div>
+    <div style="margin-top:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📋 Detail Harian</div>
+      <table>
+        <tr>
+          <th>Tgl</th>
+          <th>Masuk</th>
+          <th>Pulang</th>
+          <th>Status</th>
+        </tr>
+  `;
+  
+  res.data.forEach(r => {
+    const jamMasuk = r.JamMasuk && r.JamMasuk !== '' ? r.JamMasuk : '-';
+    const jamPulang = r.JamPulang && r.JamPulang !== '' ? r.JamPulang : '-';
+    html += `<tr>
+      <td>${r.Tanggal}</td>
+      <td>${jamMasuk}</td>
+      <td>${jamPulang}</td>
+      <td><span class="badge badge-approved">${r.Status || 'Hadir'}</span></td>
+    </tr>`;
+  });
+  
+  html += '</table></div>';
+  $('rekap-result').innerHTML = html;
+}
+  
+  // Hitung statistik
+  let totalHadir = 0, totalIzin = 0, totalSakit = 0, totalAlpha = 0;
+  res.data.forEach(r => {
+    if (r.Status === 'Hadir') totalHadir++;
+    else if (r.Status === 'Izin') totalIzin++;
+    else if (r.Status === 'Sakit') totalSakit++;
+    else if (r.Status === 'Alpha') totalAlpha++;
+  });
+  
   // Build calendar
   const daysInMonth = new Date(tahun, bulan, 0).getDate();
   const firstDay = new Date(tahun, bulan - 1, 1).getDay();
