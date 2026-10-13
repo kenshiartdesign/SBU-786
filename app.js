@@ -138,20 +138,51 @@ function nowString() {
   return d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 }
 
-// ============ PERBAIKAN: JAM LIVE DENGAN DETIK ============
+// ============ HARI PASARAN JAWA ============
+function getHariPasaranJawa(date) {
+  // Hari Pasaran Jawa: Pon, Wage, Kliwon, Legi, Pahing (siklus 5 hari)
+  // Reference: 1 Januari 1900 adalah hari Senin Pon
+  const pasaranJawa = ['Pon', 'Wage', 'Kliwon', 'Legi', 'Pahing'];
+  const hariJawa = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  
+  const referenceDate = new Date(1900, 0, 1); // 1 Januari 1900 (Senin Pon)
+  const diffTime = Math.abs(date - referenceDate);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  const pasaranIndex = diffDays % 5;
+  const hariIndex = date.getDay();
+  
+  return {
+    hari: hariJawa[hariIndex],
+    pasaran: pasaranJawa[pasaranIndex],
+    tanggal: date.getDate(),
+    bulan: date.toLocaleString('id-ID', { month: 'long' }),
+    tahun: date.getFullYear(),
+    formatLengkap: `${hariJawa[hariIndex]} ${pasaranJawa[pasaranIndex]}, ${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`
+  };
+}
+
+// ============ WAKTU LIVE DENGAN DETIK ============
 function updateTime() {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('id-ID', { 
     hour: '2-digit', 
     minute: '2-digit', 
-    second: '2-digit', // Menambahkan detik
+    second: '2-digit',
     hour12: false 
   });
-  const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const el = $('dash-time');
-  if (el) el.innerText = timeStr + ' • ' + dateStr;
+  
+  const jawa = getHariPasaranJawa(now);
+  
+  // Update di card absen (jika ada)
+  const timeEl = document.querySelector('.stat-card .value');
+  const subEl = document.querySelector('.stat-card .sub');
+  if (timeEl) timeEl.innerText = timeStr;
+  if (subEl) subEl.innerText = jawa.formatLengkap;
 }
-setInterval(updateTime, 1000); // Update setiap 1 detik
+
+// Jalankan setiap detik
+setInterval(updateTime, 1000);
 
 // ============ LOGIN ============
 async function doLogin() {
@@ -218,7 +249,7 @@ async function validateLocation() {
     const gps = await getGPS();
     const dist = haversine(gps.lat, gps.lng, currentLocation.Latitude, currentLocation.Longitude);
     if (dist > currentLocation.RadiusMeter) {
-      $('loc-status').innerText = '❌ Terlalu jauh (' + Math.round(dist) + 'm). Max ' + currentLocation.RadiusMeter + 'm';
+      $('loc-status').innerText = ' Terlalu jauh (' + Math.round(dist) + 'm). Max ' + currentLocation.RadiusMeter + 'm';
       $('loc-status').style.color = 'var(--danger)';
       showToast('Anda berada di luar radius lokasi', 'error');
       haptic('error');
@@ -238,14 +269,14 @@ async function validateLocation() {
 
 function enterDashboard(gps) {
   currentUser.gps = gps;
-  $('dash-greeting').innerText = 'Halo, ' + currentUser.NamaLengkap.split(' ')[0] + '! ';
+  $('dash-greeting').innerText = 'Halo, ' + currentUser.NamaLengkap.split(' ')[0] + '!';
   $('dash-loc').innerText = '📍 ' + currentLocation.NamaLokasi;
-  $('dash-user').innerText = currentUser.NamaLengkap;
   const initial = currentUser.NamaLengkap ? currentUser.NamaLengkap.charAt(0).toUpperCase() : '👤';
   $('dash-avatar').innerText = initial;
-  updateTime();
   hide('page-location');
   show('page-dashboard');
+  
+  // Render semua halaman
   renderAbsen();
   renderPatroli();
   renderKejadian();
@@ -253,6 +284,9 @@ function enterDashboard(gps) {
   renderInfo();
   renderProfil();
   loadPendingCount();
+  
+  // Mulai update waktu
+  updateTime();
 }
 
 // ============ NAVIGASI ============
@@ -297,6 +331,10 @@ async function renderAbsen() {
   hideLoading();
   if (res.ok && res.data) absenState = res.data;
   drawAbsen();
+  // Pastikan waktu terus berjalan setelah render
+  if (!window.timeInterval) {
+    window.timeInterval = setInterval(updateTime, 1000);
+  }
 }
 
 function drawAbsen() {
@@ -304,12 +342,16 @@ function drawAbsen() {
   const canPulang = absenState.masuk && !absenState.pulang;
   const selesai = !canMasuk && !canPulang;
   
-  $('content-absen').innerHTML = '<div class="stat-card"><div class="label">Waktu Sekarang</div><div class="value">' + new Date().toLocaleTimeString('id-ID') + '</div><div class="sub">' + new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</div></div><div class="card"><div class="card-title"><span class="icon"></span> Status Hari Ini</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;"><div style="background:' + (absenState.masuk ? 'var(--success-light)' : '#f5f5f5') + ';padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--muted);">MASUK</div><div style="font-size:16px;font-weight:700;color:' + (absenState.masuk ? 'var(--success)' : 'var(--muted)') + ';">' + (absenState.jamMasuk ? (absenState.jamMasuk.split(' ')[1] || absenState.jamMasuk) : 'Belum') + '</div></div><div style="background:' + (absenState.pulang ? 'var(--success-light)' : '#f5f5f5') + ';padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--muted);">PULANG</div><div style="font-size:16px;font-weight:700;color:' + (absenState.pulang ? 'var(--success)' : 'var(--muted)') + ';">' + (absenState.jamPulang ? (absenState.jamPulang.split(' ')[1] || absenState.jamPulang) : 'Belum') + '</div></div></div>' + (selesai ? '<div style="background:var(--success-light);padding:16px;border-radius:8px;text-align:center;color:var(--success);"><div style="font-size:32px;margin-bottom:8px;">✅</div><div style="font-weight:700;font-size:16px;">Absensi hari ini selesai!</div><div style="font-size:12px;margin-top:4px;">Terima kasih atas kerja keras Anda 🙏</div></div>' : '<button class="btn btn-success" ' + (canMasuk ? '' : 'disabled') + ' onclick="bukaKamera(\'masuk\')">✅ ABSEN MASUK (Selfie)</button><div style="height:10px;"></div><button class="btn btn-danger" ' + (canPulang ? '' : 'disabled') + ' onclick="bukaKamera(\'pulang\')">🤳 ABSEN PULANG (Selfie)</button>') + '</div>';
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const jawa = getHariPasaranJawa(now);
+  
+  $('content-absen').innerHTML = '<div class="stat-card"><div class="label">Waktu Sekarang</div><div class="value">' + timeStr + '</div><div class="sub">' + jawa.formatLengkap + '</div></div><div class="card"><div class="card-title"><span class="icon"></span> Status Hari Ini</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;"><div style="background:' + (absenState.masuk ? 'var(--success-light)' : '#f5f5f5') + ';padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--muted);">MASUK</div><div style="font-size:16px;font-weight:700;color:' + (absenState.masuk ? 'var(--success)' : 'var(--muted)') + ';">' + (absenState.jamMasuk ? (absenState.jamMasuk.split(' ')[1] || absenState.jamMasuk) : 'Belum') + '</div></div><div style="background:' + (absenState.pulang ? 'var(--success-light)' : '#f5f5f5') + ';padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--muted);">PULANG</div><div style="font-size:16px;font-weight:700;color:' + (absenState.pulang ? 'var(--success)' : 'var(--muted)') + ';">' + (absenState.jamPulang ? (absenState.jamPulang.split(' ')[1] || absenState.jamPulang) : 'Belum') + '</div></div></div>' + (selesai ? '<div style="background:var(--success-light);padding:16px;border-radius:8px;text-align:center;color:var(--success);"><div style="font-size:32px;margin-bottom:8px;">✅</div><div style="font-weight:700;font-size:16px;">Absensi hari ini selesai!</div><div style="font-size:12px;margin-top:4px;">Terima kasih atas kerja keras Anda 🙏</div></div>' : '<button class="btn btn-success" ' + (canMasuk ? '' : 'disabled') + ' onclick="bukaKamera(\'masuk\')">✅ ABSEN MASUK (Selfie)</button><div style="height:10px;"></div><button class="btn btn-danger" ' + (canPulang ? '' : 'disabled') + ' onclick="bukaKamera(\'pulang\')">🤳 ABSEN PULANG (Selfie)</button>') + '</div>';
 }
 
 // ============ KAMERA ============
 function bukaKamera(tipe) {
-  $('camera-title').innerText = tipe === 'masuk' ? '🤳 Foto Selfie - Absen Masuk' : '🤳 Foto Selfie - Absen Pulang';
+  $('camera-title').innerText = tipe === 'masuk' ? ' Foto Selfie - Absen Masuk' : '🤳 Foto Selfie - Absen Pulang';
   $('camera-preview').innerHTML = '<div><div class="camera-icon">🤳</div><div class="camera-text">Tap "Ambil Foto" untuk selfie</div></div>';
   $('btn-confirm-photo').disabled = true;
   currentPhotoBase64 = null;
@@ -352,11 +394,9 @@ $('camera-input').addEventListener('change', async (e) => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
       const now = new Date();
-      const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-      const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-      const tanggalLengkap = hari[now.getDay()] + ', ' + now.getDate() + ' ' + bulan[now.getMonth()] + ' ' + now.getFullYear();
+      const jawa = getHariPasaranJawa(now);
       const waktuLengkap = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' });
-      const stamp = ['👤 ' + currentUser.NamaLengkap, '📅 ' + tanggalLengkap, ' ' + waktuLengkap + ' WIB', '📍 ' + currentLocation.NamaLokasi, '🌐 Lat: ' + currentUser.gps.lat.toFixed(6) + ', Lng: ' + currentUser.gps.lng.toFixed(6), '📡 Akurasi: ' + currentUser.gps.acc + 'm'];
+      const stamp = ['👤 ' + currentUser.NamaLengkap, '📅 ' + jawa.formatLengkap, '⏰ ' + waktuLengkap + ' WIB', '📍 ' + currentLocation.NamaLokasi, '🌐 Lat: ' + currentUser.gps.lat.toFixed(6) + ', Lng: ' + currentUser.gps.lng.toFixed(6), '📡 Akurasi: ' + currentUser.gps.acc + 'm'];
       const boxHeight = 160;
       const fontSize = Math.max(18, Math.min(24, canvas.width / 30));
       const gradient = ctx.createLinearGradient(0, canvas.height - boxHeight, 0, canvas.height);
@@ -397,20 +437,20 @@ function closeCamera() { hide('modal-camera'); $('camera-input').value = ''; }
 
 // ============ PATROLI ============
 function renderPatroli() {
-  $('content-patroli').innerHTML = '<div class="card"><div class="card-title"><span class="icon">🚶</span> Laporan Patroli</div><div class="form-group"><label>📍 Lokasi Patroli</label><input type="text" id="pat-lokasi" placeholder="Contoh: Area parkir belakang"></div><div class="form-group"><label>📝 Keterangan Patroli</label><textarea id="pat-ket" placeholder="Kondisi area, temuan, dll"></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="pat-foto1-box" onclick="bukaKameraOperasional(\'patroli\', 1)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="pat-foto2-box" onclick="bukaKameraOperasional(\'patroli\', 2)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-primary" onclick="submitPatroli()">📤 KIRIM LAPORAN PATROLI</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Patroli Saya</div><div id="patroli-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
+  $('content-patroli').innerHTML = '<div class="card"><div class="card-title"><span class="icon"></span> Laporan Patroli</div><div class="form-group"><label>📍 Lokasi Patroli</label><input type="text" id="pat-lokasi" placeholder="Contoh: Area parkir belakang"></div><div class="form-group"><label>📝 Keterangan Patroli</label><textarea id="pat-ket" placeholder="Kondisi area, temuan, dll"></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="pat-foto1-box" onclick="bukaKameraOperasional(\'patroli\', 1)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="pat-foto2-box" onclick="bukaKameraOperasional(\'patroli\', 2)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-primary" onclick="submitPatroli()">📤 KIRIM LAPORAN PATROLI</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Patroli Saya</div><div id="patroli-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
   loadPatroliHistory();
 }
 
 // ============ KEJADIAN ============
 function renderKejadian() {
-  $('content-kejadian').innerHTML = '<div class="card"><div class="card-title"><span class="icon">⚠️</span> Laporan Kejadian</div><div class="form-group"><label>🏷️ Jenis Kejadian</label><select id="kej-jenis"><option value="">-- Pilih Jenis --</option><option>Tamu Mencurigakan</option><option>Kecelakaan</option><option>Kerusakan Fasilitas</option><option>Pencurian</option><option>Bahaya Kebakaran</option><option>Pertengkaran</option><option>Lainnya</option></select></div><div class="form-group"><label>📍 Lokasi Kejadian</label><input type="text" id="kej-lokasi" placeholder="Lokasi spesifik"></div><div class="form-group"><label>📝 Kronologi Kejadian</label><textarea id="kej-kronologi" placeholder="Jelaskan kronologi kejadian secara detail..."></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="kej-foto1-box" onclick="bukaKameraOperasional(\'kejadian\', 1)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="kej-foto2-box" onclick="bukaKameraOperasional(\'kejadian\', 2)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-danger" onclick="submitKejadian()">🚨 LAPORKAN KEJADIAN</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Kejadian</div><div id="kejadian-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
+  $('content-kejadian').innerHTML = '<div class="card"><div class="card-title"><span class="icon">⚠️</span> Laporan Kejadian</div><div class="form-group"><label>🏷️ Jenis Kejadian</label><select id="kej-jenis"><option value="">-- Pilih Jenis --</option><option>Tamu Mencurigakan</option><option>Kecelakaan</option><option>Kerusakan Fasilitas</option><option>Pencurian</option><option>Bahaya Kebakaran</option><option>Pertengkaran</option><option>Lainnya</option></select></div><div class="form-group"><label>📍 Lokasi Kejadian</label><input type="text" id="kej-lokasi" placeholder="Lokasi spesifik"></div><div class="form-group"><label>📝 Kronologi Kejadian</label><textarea id="kej-kronologi" placeholder="Jelaskan kronologi kejadian secara detail..."></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="kej-foto1-box" onclick="bukaKameraOperasional(\'kejadian\', 1)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;"> Foto Bukti 2</label><div class="camera-box" id="kej-foto2-box" onclick="bukaKameraOperasional(\'kejadian\', 2)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-danger" onclick="submitKejadian()">🚨 LAPORKAN KEJADIAN</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Kejadian</div><div id="kejadian-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
   loadKejadianHistory();
 }
 
 let fotoOperasional = { patroli: [null, null], kejadian: [null, null] };
 
 function bukaKameraOperasional(jenis, idx) {
-  $('camera-title').innerText = '📷 Foto Bukti ' + idx + ' - ' + jenis;
+  $('camera-title').innerText = ' Foto Bukti ' + idx + ' - ' + jenis;
   $('camera-preview').innerHTML = '<div><div class="camera-icon">📷</div><div class="camera-text">Tap "Ambil Foto" untuk mulai</div></div>';
   $('btn-confirm-photo').disabled = true;
   currentPhotoBase64 = null;
@@ -507,7 +547,7 @@ async function loadKejadianHistory() {
   let html = '';
   myKejadian.forEach(k => {
     const waktu = k.Waktu ? (String(k.Waktu).split(' ')[1] || k.Waktu) : '';
-    html += '<div class="history-item" style="border-left-color:var(--danger);"><div class="header"><div class="title">⚠️ ' + (k.JenisKejadian || '-') + '</div><div class="time">' + (k.Tanggal || '') + ' ' + waktu + '</div></div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📍 ' + (k.LokasiKejadian || '-') + '</div><div class="desc">' + (k.Kronologi || '-') + '</div><div class="photos">';
+    html += '<div class="history-item" style="border-left-color:var(--danger);"><div class="header"><div class="title">️ ' + (k.JenisKejadian || '-') + '</div><div class="time">' + (k.Tanggal || '') + ' ' + waktu + '</div></div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📍 ' + (k.LokasiKejadian || '-') + '</div><div class="desc">' + (k.Kronologi || '-') + '</div><div class="photos">';
     if (k.Foto1URL) html += '<img src="' + k.Foto1URL + '" onclick="openZoom(\'' + k.Foto1URL + '\')">';
     if (k.Foto2URL) html += '<img src="' + k.Foto2URL + '" onclick="openZoom(\'' + k.Foto2URL + '\')">';
     html += '</div></div>';
@@ -557,10 +597,7 @@ async function loadRekap() {
     if (tglParts.length === 3) {
       const day = parseInt(tglParts[0]);
       statusMap[day] = r.Status || 'Hadir';
-      jamMap[day] = {
-        masuk: r.JamMasuk || '-',
-        pulang: r.JamPulang || '-'
-      };
+      jamMap[day] = { masuk: r.JamMasuk || '-', pulang: r.JamPulang || '-' };
     }
   });
   
@@ -628,7 +665,7 @@ async function loadSlipGaji() {
 }
 
 function renderShiftForm() {
-  $('info-tab-shift').innerHTML = '<h3 style="margin-bottom:10px;color:var(--primary);">🔄 Tukar Shift</h3><div class="form-group"><label>📅 Tanggal Shift Asli</label><input type="date" id="sh-tgl1"></div><div class="form-group"><label>📅 Tanggal Pengganti</label><input type="date" id="sh-tgl2"></div><div class="form-group"><label>👤 Nama Pengganti</label><input type="text" id="sh-nama" placeholder="Nama rekan pengganti"></div><div class="form-group"><label>📝 Keterangan</label><textarea id="sh-ket" placeholder="Alasan tukar shift..."></textarea></div><button class="btn btn-primary" onclick="submitShift()">📤 AJUKAN TUKAR SHIFT</button><div id="shift-history" style="margin-top:16px;"></div>';
+  $('info-tab-shift').innerHTML = '<h3 style="margin-bottom:10px;color:var(--primary);">🔄 Tukar Shift</h3><div class="form-group"><label>📅 Tanggal Shift Asli</label><input type="date" id="sh-tgl1"></div><div class="form-group"><label>📅 Tanggal Pengganti</label><input type="date" id="sh-tgl2"></div><div class="form-group"><label>👤 Nama Pengganti</label><input type="text" id="sh-nama" placeholder="Nama rekan pengganti"></div><div class="form-group"><label> Keterangan</label><textarea id="sh-ket" placeholder="Alasan tukar shift..."></textarea></div><button class="btn btn-primary" onclick="submitShift()">📤 AJUKAN TUKAR SHIFT</button><div id="shift-history" style="margin-top:16px;"></div>';
   loadShiftHistory();
 }
 
@@ -668,7 +705,7 @@ async function loadShiftHistory() {
 }
 
 function renderIzinForm() {
-  $('info-tab-izin').innerHTML = '<h3 style="margin-bottom:10px;color:var(--primary);">📝 Izin / Sakit</h3><div class="form-group"><label>🏷️ Jenis</label><select id="iz-jenis"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select></div><div class="form-group"><label>📅 Tanggal</label><input type="date" id="iz-tgl"></div><div class="form-group"><label>📝 Keterangan</label><textarea id="iz-ket" placeholder="Misal: Menikah / Demam / dll"></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti (Surat Dokter / Undangan)</label><div class="camera-box" id="iz-foto-box" onclick="bukaKameraIzin()"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-primary" onclick="submitIzin()">📤 KIRIM PENGAJUAN</button>';
+  $('info-tab-izin').innerHTML = '<h3 style="margin-bottom:10px;color:var(--primary);"> Izin / Sakit</h3><div class="form-group"><label>🏷️ Jenis</label><select id="iz-jenis"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select></div><div class="form-group"><label>📅 Tanggal</label><input type="date" id="iz-tgl"></div><div class="form-group"><label> Keterangan</label><textarea id="iz-ket" placeholder="Misal: Menikah / Demam / dll"></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti (Surat Dokter / Undangan)</label><div class="camera-box" id="iz-foto-box" onclick="bukaKameraIzin()"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-primary" onclick="submitIzin()"> KIRIM PENGAJUAN</button>';
 }
 
 let fotoIzin = null;
@@ -710,7 +747,7 @@ async function submitIzin() {
 
 // ============ PROFIL ============
 function renderProfil() {
-  const initial = currentUser.NamaLengkap ? currentUser.NamaLengkap.charAt(0).toUpperCase() : '👤';
+  const initial = currentUser.NamaLengkap ? currentUser.NamaLengkap.charAt(0).toUpperCase() : '';
   $('content-profil').innerHTML = '<div class="profile-header"><div class="profile-avatar">' + initial + '</div><div class="profile-name">' + currentUser.NamaLengkap + '</div><div class="profile-username">@' + currentUser.Username + '</div></div><div class="card"><div class="card-title"><span class="icon">📍</span> Informasi Pribadi</div><div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);">ALAMAT</div><div style="font-size:14px;">' + (currentUser.Alamat || '-') + '</div></div><div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);">NO. TELEPON</div><div style="font-size:14px;">' + (currentUser.NoTelp || '-') + '</div></div><div style="padding:8px 0;"><div style="font-size:11px;color:var(--muted);">EMAIL</div><div style="font-size:14px;">' + (currentUser.Email || '-') + '</div></div></div><div class="card"><div class="card-title"><span class="icon">ℹ️</span> Informasi Akun</div><div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);">USER ID</div><div style="font-size:14px;font-family:monospace;">' + currentUser.UserID + '</div></div><div style="padding:8px 0;"><div style="font-size:11px;color:var(--muted);">ROLE</div><div style="font-size:14px;"><span class="badge badge-info">' + currentUser.Role + '</span></div></div></div><div class="card"><button class="btn btn-danger" onclick="logout()">🚪 LOGOUT</button></div><div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;">PT Sentra Bhakti Utama<br>© 2026 - v1.2.0</div>';
 }
 
