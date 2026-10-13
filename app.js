@@ -152,8 +152,19 @@ function nowString() {
 
 function updateTime() {
   const now = new Date();
-  const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // Tambahkan second: '2-digit' untuk menampilkan detik yang berjalan
+  const timeStr = now.toLocaleTimeString('id-ID', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false 
+  });
+  const dateStr = now.toLocaleDateString('id-ID', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
   const el = $('dash-time');
   if (el) el.innerText = timeStr + ' • ' + dateStr;
 }
