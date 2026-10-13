@@ -1,7 +1,5 @@
 // ============ KONFIGURASI ============
-// PENTING: Ganti URL di bawah ini dengan URL Web App TERBARU dari Google Apps Script Anda!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyuRZrJdryJhx-aD_W7Pyix8bIGyNMJyy3hbj9eau2C6kbkHlpy9Iluaf6AYZ4M-uUQ/exec';
-
 let currentUser = null;
 let currentLocation = null;
 let selectedLocations = [];
@@ -22,18 +20,8 @@ async function api(action, data = {}) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action, ...data, token: localStorage.getItem('sbu_token') })
     });
-    
-    // Cek jika response bukan JSON (misal error 500 dari GAS yang return HTML)
-    const contentType = res.headers.get("content-type");
-    if (contentType && contentType.indexOf("application/json") !== -1) {
-      return await res.json();
-    } else {
-      const text = await res.text();
-      console.error("Non-JSON response:", text);
-      return { ok: false, message: "Server error: " + text.substring(0, 150) };
-    }
+    return await res.json();
   } catch(e) {
-    console.error("Fetch error:", e);
     showToast('Koneksi gagal: ' + e.message, 'error');
     return { ok: false, message: e.message };
   }
@@ -150,25 +138,20 @@ function nowString() {
   return d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 }
 
+// ============ PERBAIKAN: JAM LIVE DENGAN DETIK ============
 function updateTime() {
   const now = new Date();
-  // Tambahkan second: '2-digit' untuk menampilkan detik yang berjalan
   const timeStr = now.toLocaleTimeString('id-ID', { 
     hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit',
+    minute: '2-digit', 
+    second: '2-digit', // Menambahkan detik
     hour12: false 
   });
-  const dateStr = now.toLocaleDateString('id-ID', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  });
+  const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const el = $('dash-time');
   if (el) el.innerText = timeStr + ' • ' + dateStr;
 }
-setInterval(updateTime, 1000);
+setInterval(updateTime, 1000); // Update setiap 1 detik
 
 // ============ LOGIN ============
 async function doLogin() {
@@ -327,7 +310,7 @@ function drawAbsen() {
 // ============ KAMERA ============
 function bukaKamera(tipe) {
   $('camera-title').innerText = tipe === 'masuk' ? '🤳 Foto Selfie - Absen Masuk' : '🤳 Foto Selfie - Absen Pulang';
-  $('camera-preview').innerHTML = '<div><div class="camera-icon"></div><div class="camera-text">Tap "Ambil Foto" untuk mulai</div></div>';
+  $('camera-preview').innerHTML = '<div><div class="camera-icon">🤳</div><div class="camera-text">Tap "Ambil Foto" untuk selfie</div></div>';
   $('btn-confirm-photo').disabled = true;
   currentPhotoBase64 = null;
   cameraCallback = async (base64) => {
@@ -373,7 +356,7 @@ $('camera-input').addEventListener('change', async (e) => {
       const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
       const tanggalLengkap = hari[now.getDay()] + ', ' + now.getDate() + ' ' + bulan[now.getMonth()] + ' ' + now.getFullYear();
       const waktuLengkap = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' });
-      const stamp = ['👤 ' + currentUser.NamaLengkap, '📅 ' + tanggalLengkap, ' ' + waktuLengkap + ' WIB', '📍 ' + currentLocation.NamaLokasi, '🌐 Lat: ' + currentUser.gps.lat.toFixed(6) + ', Lng: ' + currentUser.gps.lng.toFixed(6), ' Akurasi: ' + currentUser.gps.acc + 'm'];
+      const stamp = ['👤 ' + currentUser.NamaLengkap, '📅 ' + tanggalLengkap, ' ' + waktuLengkap + ' WIB', '📍 ' + currentLocation.NamaLokasi, '🌐 Lat: ' + currentUser.gps.lat.toFixed(6) + ', Lng: ' + currentUser.gps.lng.toFixed(6), '📡 Akurasi: ' + currentUser.gps.acc + 'm'];
       const boxHeight = 160;
       const fontSize = Math.max(18, Math.min(24, canvas.width / 30));
       const gradient = ctx.createLinearGradient(0, canvas.height - boxHeight, 0, canvas.height);
@@ -420,14 +403,14 @@ function renderPatroli() {
 
 // ============ KEJADIAN ============
 function renderKejadian() {
-  $('content-kejadian').innerHTML = '<div class="card"><div class="card-title"><span class="icon">️</span> Laporan Kejadian</div><div class="form-group"><label>🏷️ Jenis Kejadian</label><select id="kej-jenis"><option value="">-- Pilih Jenis --</option><option>Tamu Mencurigakan</option><option>Kecelakaan</option><option>Kerusakan Fasilitas</option><option>Pencurian</option><option>Bahaya Kebakaran</option><option>Pertengkaran</option><option>Lainnya</option></select></div><div class="form-group"><label>📍 Lokasi Kejadian</label><input type="text" id="kej-lokasi" placeholder="Lokasi spesifik"></div><div class="form-group"><label>📝 Kronologi Kejadian</label><textarea id="kej-kronologi" placeholder="Jelaskan kronologi kejadian secara detail..."></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="kej-foto1-box" onclick="bukaKameraOperasional(\'kejadian\', 1)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="kej-foto2-box" onclick="bukaKameraOperasional(\'kejadian\', 2)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-danger" onclick="submitKejadian()"> LAPORKAN KEJADIAN</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Kejadian</div><div id="kejadian-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
+  $('content-kejadian').innerHTML = '<div class="card"><div class="card-title"><span class="icon">⚠️</span> Laporan Kejadian</div><div class="form-group"><label>🏷️ Jenis Kejadian</label><select id="kej-jenis"><option value="">-- Pilih Jenis --</option><option>Tamu Mencurigakan</option><option>Kecelakaan</option><option>Kerusakan Fasilitas</option><option>Pencurian</option><option>Bahaya Kebakaran</option><option>Pertengkaran</option><option>Lainnya</option></select></div><div class="form-group"><label>📍 Lokasi Kejadian</label><input type="text" id="kej-lokasi" placeholder="Lokasi spesifik"></div><div class="form-group"><label>📝 Kronologi Kejadian</label><textarea id="kej-kronologi" placeholder="Jelaskan kronologi kejadian secara detail..."></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="kej-foto1-box" onclick="bukaKameraOperasional(\'kejadian\', 1)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="kej-foto2-box" onclick="bukaKameraOperasional(\'kejadian\', 2)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-danger" onclick="submitKejadian()">🚨 LAPORKAN KEJADIAN</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Kejadian</div><div id="kejadian-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
   loadKejadianHistory();
 }
 
 let fotoOperasional = { patroli: [null, null], kejadian: [null, null] };
 
 function bukaKameraOperasional(jenis, idx) {
-  $('camera-title').innerText = ' Foto Bukti ' + idx + ' - ' + jenis;
+  $('camera-title').innerText = '📷 Foto Bukti ' + idx + ' - ' + jenis;
   $('camera-preview').innerHTML = '<div><div class="camera-icon">📷</div><div class="camera-text">Tap "Ambil Foto" untuk mulai</div></div>';
   $('btn-confirm-photo').disabled = true;
   currentPhotoBase64 = null;
@@ -524,7 +507,7 @@ async function loadKejadianHistory() {
   let html = '';
   myKejadian.forEach(k => {
     const waktu = k.Waktu ? (String(k.Waktu).split(' ')[1] || k.Waktu) : '';
-    html += '<div class="history-item" style="border-left-color:var(--danger);"><div class="header"><div class="title">️ ' + (k.JenisKejadian || '-') + '</div><div class="time">' + (k.Tanggal || '') + ' ' + waktu + '</div></div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📍 ' + (k.LokasiKejadian || '-') + '</div><div class="desc">' + (k.Kronologi || '-') + '</div><div class="photos">';
+    html += '<div class="history-item" style="border-left-color:var(--danger);"><div class="header"><div class="title">⚠️ ' + (k.JenisKejadian || '-') + '</div><div class="time">' + (k.Tanggal || '') + ' ' + waktu + '</div></div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📍 ' + (k.LokasiKejadian || '-') + '</div><div class="desc">' + (k.Kronologi || '-') + '</div><div class="photos">';
     if (k.Foto1URL) html += '<img src="' + k.Foto1URL + '" onclick="openZoom(\'' + k.Foto1URL + '\')">';
     if (k.Foto2URL) html += '<img src="' + k.Foto2URL + '" onclick="openZoom(\'' + k.Foto2URL + '\')">';
     html += '</div></div>';
@@ -574,7 +557,10 @@ async function loadRekap() {
     if (tglParts.length === 3) {
       const day = parseInt(tglParts[0]);
       statusMap[day] = r.Status || 'Hadir';
-      jamMap[day] = { masuk: r.JamMasuk || '-', pulang: r.JamPulang || '-' };
+      jamMap[day] = {
+        masuk: r.JamMasuk || '-',
+        pulang: r.JamPulang || '-'
+      };
     }
   });
   
