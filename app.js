@@ -40,14 +40,10 @@ function showToast(message, type = 'success') {
   haptic(type === 'error' ? 'error' : 'light');
   const toast = document.createElement('div');
   toast.className = 'toast ' + type;
-  const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
-  toast.innerHTML = `<span>${icons[type] || '✓'}</span><span>${message}</span>`;
+  const icons = { success: '✓', error: '✗', warning: '⚠', info: '' };
+  toast.innerHTML = '<span>' + (icons[type] || '✓') + '</span><span>' + message + '</span>';
   $('toast-container').appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
 }
 
 // ============ LOADER ============
@@ -100,7 +96,7 @@ function updateConnectionStatus() {
   const status = $('connection-status');
   if (navigator.onLine) {
     status.className = 'online show';
-    status.innerText = ' Online';
+    status.innerText = '🟢 Online';
     setTimeout(() => status.classList.remove('show'), 2000);
   } else {
     status.className = 'offline show';
@@ -193,14 +189,7 @@ async function loadLocations() {
   res.data.forEach(loc => {
     const item = document.createElement('div');
     item.className = 'location-item';
-    item.innerHTML = `
-      <div class="loc-icon">📍</div>
-      <div style="flex:1;">
-        <div class="name">${loc.NamaLokasi}</div>
-        <div class="meta">Radius: ${loc.RadiusMeter}m</div>
-      </div>
-      <div style="font-size:20px;color:var(--muted);">›</div>
-    `;
+    item.innerHTML = '<div class="loc-icon">📍</div><div style="flex:1;"><div class="name">' + loc.NamaLokasi + '</div><div class="meta">Radius: ' + loc.RadiusMeter + 'm</div></div><div style="font-size:20px;color:var(--muted);">›</div>';
     item.onclick = function() {
       document.querySelectorAll('.location-item').forEach(c => c.classList.remove('selected'));
       item.classList.add('selected');
@@ -223,13 +212,13 @@ async function validateLocation() {
     const gps = await getGPS();
     const dist = haversine(gps.lat, gps.lng, currentLocation.Latitude, currentLocation.Longitude);
     if (dist > currentLocation.RadiusMeter) {
-      $('loc-status').innerText = `❌ Terlalu jauh (${Math.round(dist)}m). Max ${currentLocation.RadiusMeter}m`;
+      $('loc-status').innerText = '❌ Terlalu jauh (' + Math.round(dist) + 'm). Max ' + currentLocation.RadiusMeter + 'm';
       $('loc-status').style.color = 'var(--danger)';
       showToast('Anda berada di luar radius lokasi', 'error');
       haptic('error');
       return;
     }
-    $('loc-status').innerText = `✓ Valid (${Math.round(dist)}m dari lokasi)`;
+    $('loc-status').innerText = '✓ Valid (' + Math.round(dist) + 'm dari lokasi)';
     $('loc-status').style.color = 'var(--success)';
     showToast('✓ Lokasi terverifikasi', 'success');
     haptic('success');
@@ -243,7 +232,7 @@ async function validateLocation() {
 
 function enterDashboard(gps) {
   currentUser.gps = gps;
-  $('dash-greeting').innerText = 'Halo, ' + currentUser.NamaLengkap.split(' ')[0] + '! 👋';
+  $('dash-greeting').innerText = 'Halo, ' + currentUser.NamaLengkap.split(' ')[0] + '! ';
   $('dash-loc').innerText = '📍 ' + currentLocation.NamaLokasi;
   $('dash-user').innerText = currentUser.NamaLengkap;
   const initial = currentUser.NamaLengkap ? currentUser.NamaLengkap.charAt(0).toUpperCase() : '👤';
@@ -264,10 +253,10 @@ function enterDashboard(gps) {
 function switchPage(page) {
   ['absen','patroli','kejadian','rekap','info','profil'].forEach(p => {
     hide('content-' + p);
-    document.querySelector(`.nav-item[data-page="${p}"]`).classList.remove('active');
+    document.querySelector('.nav-item[data-page="' + p + '"]').classList.remove('active');
   });
   show('content-' + page);
-  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  document.querySelector('.nav-item[data-page="' + page + '"]').classList.add('active');
   if (page === 'rekap') loadRekap();
   if (page === 'info') { loadInfo(); loadPendingCount(); }
   window.scrollTo(0, 0);
@@ -309,51 +298,13 @@ function drawAbsen() {
   const canPulang = absenState.masuk && !absenState.pulang;
   const selesai = !canMasuk && !canPulang;
   
-  $('content-absen').innerHTML = `
-    <div class="stat-card">
-      <div class="label">Waktu Sekarang</div>
-      <div class="value">${new Date().toLocaleTimeString('id-ID')}</div>
-      <div class="sub">${new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="icon">📋</span> Status Hari Ini</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-        <div style="background:${absenState.masuk ? 'var(--success-light)' : '#f5f5f5'};padding:12px;border-radius:8px;text-align:center;">
-          <div style="font-size:11px;color:var(--muted);">MASUK</div>
-          <div style="font-size:16px;font-weight:700;color:${absenState.masuk ? 'var(--success)' : 'var(--muted)'};">
-            ${absenState.jamMasuk ? (absenState.jamMasuk.split(' ')[1] || absenState.jamMasuk) : 'Belum'}
-          </div>
-        </div>
-        <div style="background:${absenState.pulang ? 'var(--success-light)' : '#f5f5f5'};padding:12px;border-radius:8px;text-align:center;">
-          <div style="font-size:11px;color:var(--muted);">PULANG</div>
-          <div style="font-size:16px;font-weight:700;color:${absenState.pulang ? 'var(--success)' : 'var(--muted)'};">
-            ${absenState.jamPulang ? (absenState.jamPulang.split(' ')[1] || absenState.jamPulang) : 'Belum'}
-          </div>
-        </div>
-      </div>
-      ${selesai ? `
-        <div style="background:var(--success-light);padding:16px;border-radius:8px;text-align:center;color:var(--success);">
-          <div style="font-size:32px;margin-bottom:8px;">✅</div>
-          <div style="font-weight:700;font-size:16px;">Absensi hari ini selesai!</div>
-          <div style="font-size:12px;margin-top:4px;">Terima kasih atas kerja keras Anda 🙏</div>
-        </div>
-      ` : `
-        <button class="btn btn-success" ${canMasuk ? '' : 'disabled'} onclick="bukaKamera('masuk')">
-           ABSEN MASUK (Selfie)
-        </button>
-        <div style="height:10px;"></div>
-        <button class="btn btn-danger" ${canPulang ? '' : 'disabled'} onclick="bukaKamera('pulang')">
-          🤳 ABSEN PULANG (Selfie)
-        </button>
-      `}
-    </div>
-  `;
+  $('content-absen').innerHTML = '<div class="stat-card"><div class="label">Waktu Sekarang</div><div class="value">' + new Date().toLocaleTimeString('id-ID') + '</div><div class="sub">' + new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '</div></div><div class="card"><div class="card-title"><span class="icon"></span> Status Hari Ini</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;"><div style="background:' + (absenState.masuk ? 'var(--success-light)' : '#f5f5f5') + ';padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--muted);">MASUK</div><div style="font-size:16px;font-weight:700;color:' + (absenState.masuk ? 'var(--success)' : 'var(--muted)') + ';">' + (absenState.jamMasuk ? (absenState.jamMasuk.split(' ')[1] || absenState.jamMasuk) : 'Belum') + '</div></div><div style="background:' + (absenState.pulang ? 'var(--success-light)' : '#f5f5f5') + ';padding:12px;border-radius:8px;text-align:center;"><div style="font-size:11px;color:var(--muted);">PULANG</div><div style="font-size:16px;font-weight:700;color:' + (absenState.pulang ? 'var(--success)' : 'var(--muted)') + ';">' + (absenState.jamPulang ? (absenState.jamPulang.split(' ')[1] || absenState.jamPulang) : 'Belum') + '</div></div></div>' + (selesai ? '<div style="background:var(--success-light);padding:16px;border-radius:8px;text-align:center;color:var(--success);"><div style="font-size:32px;margin-bottom:8px;">✅</div><div style="font-weight:700;font-size:16px;">Absensi hari ini selesai!</div><div style="font-size:12px;margin-top:4px;">Terima kasih atas kerja keras Anda 🙏</div></div>' : '<button class="btn btn-success" ' + (canMasuk ? '' : 'disabled') + ' onclick="bukaKamera(\'masuk\')">✅ ABSEN MASUK (Selfie)</button><div style="height:10px;"></div><button class="btn btn-danger" ' + (canPulang ? '' : 'disabled') + ' onclick="bukaKamera(\'pulang\')">🤳 ABSEN PULANG (Selfie)</button>') + '</div>';
 }
 
-// ============ KAMERA (SELFIE MODE) ============
+// ============ KAMERA ============
 function bukaKamera(tipe) {
   $('camera-title').innerText = tipe === 'masuk' ? '🤳 Foto Selfie - Absen Masuk' : '🤳 Foto Selfie - Absen Pulang';
-  $('camera-preview').innerHTML = '<div><div class="camera-icon"></div><div class="camera-text">Tap "Ambil Selfie" untuk mulai</div></div>';
+  $('camera-preview').innerHTML = '<div><div class="camera-icon"></div><div class="camera-text">Tap "Ambil Foto" untuk mulai</div></div>';
   $('btn-confirm-photo').disabled = true;
   currentPhotoBase64 = null;
   cameraCallback = async (base64) => {
@@ -381,12 +332,10 @@ function bukaKamera(tipe) {
   show('modal-camera');
 }
 
-// ============ PROSES FOTO DENGAN TIMESTAMP LENGKAP ============
 $('camera-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   showLoading('Memproses foto...');
-  
   const reader = new FileReader();
   reader.onload = async (ev) => {
     const img = new Image();
@@ -396,61 +345,35 @@ $('camera-input').addEventListener('change', async (e) => {
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
-      
-      // Format tanggal & waktu lengkap
       const now = new Date();
       const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
       const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-      
-      const tanggalLengkap = `${hari[now.getDay()]}, ${now.getDate()} ${bulan[now.getMonth()]} ${now.getFullYear()}`;
+      const tanggalLengkap = hari[now.getDay()] + ', ' + now.getDate() + ' ' + bulan[now.getMonth()] + ' ' + now.getFullYear();
       const waktuLengkap = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' });
-      
-      const stamp = [
-        '👤 ' + currentUser.NamaLengkap,
-        '📅 ' + tanggalLengkap,
-        '⏰ ' + waktuLengkap + ' WIB',
-        ' ' + currentLocation.NamaLokasi,
-        '🌐 Lat: ' + currentUser.gps.lat.toFixed(6) + ', Lng: ' + currentUser.gps.lng.toFixed(6),
-        '📡 Akurasi: ' + currentUser.gps.acc + 'm'
-      ];
-      
-      // Hitung tinggi box timestamp
+      const stamp = ['👤 ' + currentUser.NamaLengkap, '📅 ' + tanggalLengkap, ' ' + waktuLengkap + ' WIB', '📍 ' + currentLocation.NamaLokasi, '🌐 Lat: ' + currentUser.gps.lat.toFixed(6) + ', Lng: ' + currentUser.gps.lng.toFixed(6), ' Akurasi: ' + currentUser.gps.acc + 'm'];
       const boxHeight = 160;
       const fontSize = Math.max(18, Math.min(24, canvas.width / 30));
-      
-      // Background gradient hitam transparan
       const gradient = ctx.createLinearGradient(0, canvas.height - boxHeight, 0, canvas.height);
       gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
       gradient.addColorStop(0.3, 'rgba(0, 0, 0, 0.7)');
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0.85)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
-      
-      // Garis aksen biru di atas
       ctx.fillStyle = '#0d47a1';
       ctx.fillRect(0, canvas.height - boxHeight, canvas.width, 4);
-      
-      // Teks putih dengan shadow
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.font = 'bold ' + fontSize + 'px Arial';
       ctx.textBaseline = 'top';
       ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
       ctx.shadowBlur = 4;
       ctx.shadowOffsetX = 1;
       ctx.shadowOffsetY = 1;
-      
       const startY = canvas.height - boxHeight + 15;
       const lineHeight = fontSize + 6;
-      
-      stamp.forEach((line, i) => {
-        ctx.fillText(line, 15, startY + (i * lineHeight));
-      });
-      
-      // Reset shadow
+      stamp.forEach((line, i) => { ctx.fillText(line, 15, startY + (i * lineHeight)); });
       ctx.shadowColor = 'transparent';
-      
       currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
-      $('camera-preview').innerHTML = `<img src="${currentPhotoBase64}" onclick="openZoom('${currentPhotoBase64}')" style="cursor:zoom-in;">`;
+      $('camera-preview').innerHTML = '<img src="' + currentPhotoBase64 + '" onclick="openZoom(\'' + currentPhotoBase64 + '\')" style="cursor:zoom-in;">';
       $('btn-confirm-photo').disabled = false;
       hideLoading();
       showToast('✓ Foto selfie siap dikirim', 'success');
@@ -468,96 +391,27 @@ function closeCamera() { hide('modal-camera'); $('camera-input').value = ''; }
 
 // ============ PATROLI ============
 function renderPatroli() {
-  $('content-patroli').innerHTML = `
-    <div class="card">
-      <div class="card-title"><span class="icon"></span> Laporan Patroli</div>
-      <div class="form-group">
-        <label>📍 Lokasi Patroli</label>
-        <input type="text" id="pat-lokasi" placeholder="Contoh: Area parkir belakang">
-      </div>
-      <div class="form-group">
-        <label>📝 Keterangan Patroli</label>
-        <textarea id="pat-ket" placeholder="Kondisi area, temuan, dll"></textarea>
-      </div>
-      <label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label>
-      <div class="camera-box" id="pat-foto1-box" onclick="bukaKameraOperasional('patroli', 1)">
-        <div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div>
-      </div>
-      <label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label>
-      <div class="camera-box" id="pat-foto2-box" onclick="bukaKameraOperasional('patroli', 2)">
-        <div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div>
-      </div>
-      <button class="btn btn-primary" onclick="submitPatroli()">📤 KIRIM LAPORAN PATROLI</button>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="icon"></span> Riwayat Patroli Saya</div>
-      <div id="patroli-history">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
-    </div>
-  `;
+  $('content-patroli').innerHTML = '<div class="card"><div class="card-title"><span class="icon">🚶</span> Laporan Patroli</div><div class="form-group"><label>📍 Lokasi Patroli</label><input type="text" id="pat-lokasi" placeholder="Contoh: Area parkir belakang"></div><div class="form-group"><label>📝 Keterangan Patroli</label><textarea id="pat-ket" placeholder="Kondisi area, temuan, dll"></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="pat-foto1-box" onclick="bukaKameraOperasional(\'patroli\', 1)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="pat-foto2-box" onclick="bukaKameraOperasional(\'patroli\', 2)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-primary" onclick="submitPatroli()">📤 KIRIM LAPORAN PATROLI</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Patroli Saya</div><div id="patroli-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
   loadPatroliHistory();
 }
 
 // ============ KEJADIAN ============
 function renderKejadian() {
-  $('content-kejadian').innerHTML = `
-    <div class="card">
-      <div class="card-title"><span class="icon">⚠️</span> Laporan Kejadian</div>
-      <div class="form-group">
-        <label>🏷️ Jenis Kejadian</label>
-        <select id="kej-jenis">
-          <option value="">-- Pilih Jenis --</option>
-          <option>Tamu Mencurigakan</option>
-          <option>Kecelakaan</option>
-          <option>Kerusakan Fasilitas</option>
-          <option>Pencurian</option>
-          <option>Bahaya Kebakaran</option>
-          <option>Pertengkaran</option>
-          <option>Lainnya</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>📍 Lokasi Kejadian</label>
-        <input type="text" id="kej-lokasi" placeholder="Lokasi spesifik">
-      </div>
-      <div class="form-group">
-        <label>📝 Kronologi Kejadian</label>
-        <textarea id="kej-kronologi" placeholder="Jelaskan kronologi kejadian secara detail..."></textarea>
-      </div>
-      <label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label>
-      <div class="camera-box" id="kej-foto1-box" onclick="bukaKameraOperasional('kejadian', 1)">
-        <div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div>
-      </div>
-      <label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label>
-      <div class="camera-box" id="kej-foto2-box" onclick="bukaKameraOperasional('kejadian', 2)">
-        <div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div>
-      </div>
-      <button class="btn btn-danger" onclick="submitKejadian()">🚨 LAPORKAN KEJADIAN</button>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="icon">📜</span> Riwayat Kejadian</div>
-      <div id="kejadian-history">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
-    </div>
-  `;
+  $('content-kejadian').innerHTML = '<div class="card"><div class="card-title"><span class="icon">️</span> Laporan Kejadian</div><div class="form-group"><label>🏷️ Jenis Kejadian</label><select id="kej-jenis"><option value="">-- Pilih Jenis --</option><option>Tamu Mencurigakan</option><option>Kecelakaan</option><option>Kerusakan Fasilitas</option><option>Pencurian</option><option>Bahaya Kebakaran</option><option>Pertengkaran</option><option>Lainnya</option></select></div><div class="form-group"><label>📍 Lokasi Kejadian</label><input type="text" id="kej-lokasi" placeholder="Lokasi spesifik"></div><div class="form-group"><label>📝 Kronologi Kejadian</label><textarea id="kej-kronologi" placeholder="Jelaskan kronologi kejadian secara detail..."></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti 1</label><div class="camera-box" id="kej-foto1-box" onclick="bukaKameraOperasional(\'kejadian\', 1)"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><label style="font-weight:600;font-size:13px;margin:12px 0 8px;display:block;">📷 Foto Bukti 2</label><div class="camera-box" id="kej-foto2-box" onclick="bukaKameraOperasional(\'kejadian\', 2)"><div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-danger" onclick="submitKejadian()"> LAPORKAN KEJADIAN</button></div><div class="card"><div class="card-title"><span class="icon">📜</span> Riwayat Kejadian</div><div id="kejadian-history"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
   loadKejadianHistory();
 }
 
 let fotoOperasional = { patroli: [null, null], kejadian: [null, null] };
 
 function bukaKameraOperasional(jenis, idx) {
-  $('camera-title').innerText = `📷 Foto Bukti ${idx} - ${jenis}`;
+  $('camera-title').innerText = ' Foto Bukti ' + idx + ' - ' + jenis;
   $('camera-preview').innerHTML = '<div><div class="camera-icon">📷</div><div class="camera-text">Tap "Ambil Foto" untuk mulai</div></div>';
   $('btn-confirm-photo').disabled = true;
   currentPhotoBase64 = null;
   cameraCallback = (base64) => {
     fotoOperasional[jenis][idx-1] = base64;
-    const boxId = jenis === 'patroli' ? `pat-foto${idx}-box` : `kej-foto${idx}-box`;
-    $(boxId).innerHTML = `<img src="${base64}" onclick="openZoom('${base64}')" style="cursor:zoom-in;">`;
+    const boxId = jenis === 'patroli' ? 'pat-foto' + idx + '-box' : 'kej-foto' + idx + '-box';
+    $(boxId).innerHTML = '<img src="' + base64 + '" onclick="openZoom(\'' + base64 + '\')" style="cursor:zoom-in;">';
     showToast('✓ Foto ' + idx + ' tersimpan', 'success');
     haptic('light');
   };
@@ -611,7 +465,6 @@ async function submitKejadian() {
   });
 }
 
-// ============ HISTORY PATROLI & KEJADIAN ============
 async function loadPatroliHistory() {
   const res = await api('adminGetAll', { type: 'patrols' });
   if (!res.ok || !res.data) {
@@ -620,25 +473,16 @@ async function loadPatroliHistory() {
   }
   const myPatrols = res.data.filter(p => p.UserID === currentUser.UserID).slice(-10).reverse();
   if (myPatrols.length === 0) {
-    $('patroli-history').innerHTML = '<div class="empty-state"><div class="icon">🚶</div><div class="text">Belum ada patroli</div></div>';
+    $('patroli-history').innerHTML = '<div class="empty-state"><div class="icon"></div><div class="text">Belum ada patroli</div></div>';
     return;
   }
   let html = '';
   myPatrols.forEach(p => {
     const waktu = p.Waktu ? (String(p.Waktu).split(' ')[1] || p.Waktu) : '';
-    html += `
-      <div class="history-item">
-        <div class="header">
-          <div class="title"> ${p.LokasiPatroli || '-'}</div>
-          <div class="time">${p.Tanggal || ''} ${waktu}</div>
-        </div>
-        <div class="desc">${p.Keterangan || '-'}</div>
-        <div class="photos">
-          ${p.Foto1URL ? `<img src="${p.Foto1URL}" onclick="openZoom('${p.Foto1URL}')">` : ''}
-          ${p.Foto2URL ? `<img src="${p.Foto2URL}" onclick="openZoom('${p.Foto2URL}')">` : ''}
-        </div>
-      </div>
-    `;
+    html += '<div class="history-item"><div class="header"><div class="title">📍 ' + (p.LokasiPatroli || '-') + '</div><div class="time">' + (p.Tanggal || '') + ' ' + waktu + '</div></div><div class="desc">' + (p.Keterangan || '-') + '</div><div class="photos">';
+    if (p.Foto1URL) html += '<img src="' + p.Foto1URL + '" onclick="openZoom(\'' + p.Foto1URL + '\')">';
+    if (p.Foto2URL) html += '<img src="' + p.Foto2URL + '" onclick="openZoom(\'' + p.Foto2URL + '\')">';
+    html += '</div></div>';
   });
   $('patroli-history').innerHTML = html;
 }
@@ -657,20 +501,10 @@ async function loadKejadianHistory() {
   let html = '';
   myKejadian.forEach(k => {
     const waktu = k.Waktu ? (String(k.Waktu).split(' ')[1] || k.Waktu) : '';
-    html += `
-      <div class="history-item" style="border-left-color:var(--danger);">
-        <div class="header">
-          <div class="title">⚠️ ${k.JenisKejadian || '-'}</div>
-          <div class="time">${k.Tanggal || ''} ${waktu}</div>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📍 ${k.LokasiKejadian || '-'}</div>
-        <div class="desc">${k.Kronologi || '-'}</div>
-        <div class="photos">
-          ${k.Foto1URL ? `<img src="${k.Foto1URL}" onclick="openZoom('${k.Foto1URL}')">` : ''}
-          ${k.Foto2URL ? `<img src="${k.Foto2URL}" onclick="openZoom('${k.Foto2URL}')">` : ''}
-        </div>
-      </div>
-    `;
+    html += '<div class="history-item" style="border-left-color:var(--danger);"><div class="header"><div class="title">️ ' + (k.JenisKejadian || '-') + '</div><div class="time">' + (k.Tanggal || '') + ' ' + waktu + '</div></div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📍 ' + (k.LokasiKejadian || '-') + '</div><div class="desc">' + (k.Kronologi || '-') + '</div><div class="photos">';
+    if (k.Foto1URL) html += '<img src="' + k.Foto1URL + '" onclick="openZoom(\'' + k.Foto1URL + '\')">';
+    if (k.Foto2URL) html += '<img src="' + k.Foto2URL + '" onclick="openZoom(\'' + k.Foto2URL + '\')">';
+    html += '</div></div>';
   });
   $('kejadian-history').innerHTML = html;
 }
@@ -680,26 +514,7 @@ function renderRekap() {
   const now = new Date();
   const bulan = now.toLocaleString('id-ID', { month: 'long' });
   const tahun = now.getFullYear();
-  $('content-rekap').innerHTML = `
-    <div class="card">
-      <div class="card-title"><span class="icon">📊</span> Rekap Absensi Bulanan</div>
-      <div class="form-group">
-        <label>Pilih Bulan</label>
-        <select id="rekap-bulan" onchange="loadRekap()">
-          ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-            .map((b,i) => `<option value="${i+1}" ${i+1===now.getMonth()+1?'selected':''}>${b}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Tahun</label>
-        <input type="number" id="rekap-tahun" value="${tahun}" onchange="loadRekap()">
-      </div>
-      <div id="rekap-result">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-      </div>
-    </div>
-  `;
+  $('content-rekap').innerHTML = '<div class="card"><div class="card-title"><span class="icon"></span> Rekap Absensi Bulanan</div><div class="form-group"><label>Pilih Bulan</label><select id="rekap-bulan" onchange="loadRekap()">' + ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].map((b,i) => '<option value="' + (i+1) + '" ' + (i+1===now.getMonth()+1?'selected':'') + '>' + b + '</option>').join('') + '</select></div><div class="form-group"><label>Tahun</label><input type="number" id="rekap-tahun" value="' + tahun + '" onchange="loadRekap()"></div><div id="rekap-result"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div></div>';
   setTimeout(() => loadRekap(), 100);
 }
 
@@ -707,20 +522,16 @@ async function loadRekap() {
   const bulan = parseInt($('rekap-bulan').value);
   const tahun = parseInt($('rekap-tahun').value);
   $('rekap-result').innerHTML = '<div style="text-align:center;padding:20px;"><div class="loader" style="margin:0 auto;"></div></div>';
-  
   const res = await api('getRekap', { UserID: currentUser.UserID, Bulan: bulan, Tahun: tahun });
-  
   if (!res.ok) { 
     $('rekap-result').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div class="text">' + res.message + '</div></div>'; 
     return; 
   }
-  
   if (!res.data || res.data.length === 0) {
-    $('rekap-result').innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="text">Belum ada data absensi</div></div>';
+    $('rekap-result').innerHTML = '<div class="empty-state"><div class="icon"></div><div class="text">Belum ada data absensi</div></div>';
     return;
   }
   
-  // Hitung statistik
   let totalHadir = 0, totalIzin = 0, totalSakit = 0, totalAlpha = 0;
   res.data.forEach(r => {
     if (r.Status === 'Hadir') totalHadir++;
@@ -729,15 +540,13 @@ async function loadRekap() {
     else if (r.Status === 'Alpha') totalAlpha++;
   });
   
-  // Build calendar dengan warna hijau untuk hari hadir
   const daysInMonth = new Date(tahun, bulan, 0).getDate();
   const firstDay = new Date(tahun, bulan - 1, 1).getDay();
   const dayNames = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
   const statusMap = {};
-  const jamMap = {}; // Simpan jam masuk & pulang
+  const jamMap = {};
   
   res.data.forEach(r => {
-    // Parse tanggal DD-MM-YYYY
     const tglParts = r.Tanggal.split('-');
     if (tglParts.length === 3) {
       const day = parseInt(tglParts[0]);
@@ -750,153 +559,38 @@ async function loadRekap() {
   });
   
   let calendarHtml = '<div class="calendar-grid">';
-  dayNames.forEach(d => { calendarHtml += `<div class="calendar-day-header">${d}</div>`; });
+  dayNames.forEach(d => { calendarHtml += '<div class="calendar-day-header">' + d + '</div>'; });
   for (let i = 0; i < firstDay; i++) { calendarHtml += '<div class="calendar-day empty"></div>'; }
   const today = new Date();
   for (let day = 1; day <= daysInMonth; day++) {
     const status = statusMap[day];
     const isToday = (today.getDate() === day && today.getMonth() + 1 === bulan && today.getFullYear() === tahun);
     let cls = 'calendar-day';
-    
-    // WARNA HIJAU KALEM untuk hari hadir
     if (status === 'Hadir') cls += ' hadir';
     else if (status === 'Izin') cls += ' izin';
     else if (status === 'Sakit') cls += ' sakit';
     else if (status === 'Alpha') cls += ' alpha';
-    
     if (isToday) cls += ' today';
-    
-    // Tambah tooltip untuk jam
-    const jamInfo = jamMap[day] ? ` title="Masuk: ${jamMap[day].masuk}, Pulang: ${jamMap[day].pulang}"` : '';
-    calendarHtml += `<div class="${cls}"${jamInfo}>${day}</div>`;
+    const jamInfo = jamMap[day] ? ' title="Masuk: ' + jamMap[day].masuk + ', Pulang: ' + jamMap[day].pulang + '"' : '';
+    calendarHtml += '<div class="' + cls + '"' + jamInfo + '>' + day + '</div>';
   }
   calendarHtml += '</div>';
   
-  // Build table dengan jam yang benar
-  let html = `
-    <div class="mini-stats">
-      <div class="mini-stat green"><div class="label">Hadir</div><div class="value">${totalHadir}</div></div>
-      <div class="mini-stat orange"><div class="label">Izin</div><div class="value">${totalIzin}</div></div>
-      <div class="mini-stat"><div class="label">Sakit</div><div class="value">${totalSakit}</div></div>
-      <div class="mini-stat red"><div class="label">Alpha</div><div class="value">${totalAlpha}</div></div>
-    </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;"> Kalender Absensi</div>
-      ${calendarHtml}
-    </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📋 Detail Harian</div>
-      <table>
-        <tr>
-          <th>Tgl</th>
-          <th>Masuk</th>
-          <th>Pulang</th>
-          <th>Status</th>
-        </tr>
-  `;
-  
+  let html = '<div class="mini-stats"><div class="mini-stat green"><div class="label">Hadir</div><div class="value">' + totalHadir + '</div></div><div class="mini-stat orange"><div class="label">Izin</div><div class="value">' + totalIzin + '</div></div><div class="mini-stat"><div class="label">Sakit</div><div class="value">' + totalSakit + '</div></div><div class="mini-stat red"><div class="label">Alpha</div><div class="value">' + totalAlpha + '</div></div></div>';
+  html += '<div style="margin-top:16px;"><div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📅 Kalender Absensi</div>' + calendarHtml + '</div>';
+  html += '<div style="margin-top:16px;"><div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📋 Detail Harian</div><table><tr><th>Tgl</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr>';
   res.data.forEach(r => {
     const jamMasuk = r.JamMasuk && r.JamMasuk !== '' ? r.JamMasuk : '-';
     const jamPulang = r.JamPulang && r.JamPulang !== '' ? r.JamPulang : '-';
-    html += `<tr>
-      <td>${r.Tanggal}</td>
-      <td>${jamMasuk}</td>
-      <td>${jamPulang}</td>
-      <td><span class="badge badge-approved">${r.Status || 'Hadir'}</span></td>
-    </tr>`;
+    html += '<tr><td>' + r.Tanggal + '</td><td>' + jamMasuk + '</td><td>' + jamPulang + '</td><td><span class="badge badge-approved">' + (r.Status || 'Hadir') + '</span></td></tr>';
   });
-  
-  html += '</table></div>';
-  $('rekap-result').innerHTML = html;
-}
-  
-  // Hitung statistik
-  let totalHadir = 0, totalIzin = 0, totalSakit = 0, totalAlpha = 0;
-  res.data.forEach(r => {
-    if (r.Status === 'Hadir') totalHadir++;
-    else if (r.Status === 'Izin') totalIzin++;
-    else if (r.Status === 'Sakit') totalSakit++;
-    else if (r.Status === 'Alpha') totalAlpha++;
-  });
-  
-  // Build calendar
-  const daysInMonth = new Date(tahun, bulan, 0).getDate();
-  const firstDay = new Date(tahun, bulan - 1, 1).getDay();
-  const dayNames = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
-  const statusMap = {};
-  res.data.forEach(r => {
-    const day = new Date(r.Tanggal).getDate();
-    statusMap[day] = r.Status || 'Hadir';
-  });
-  
-  let calendarHtml = '<div class="calendar-grid">';
-  dayNames.forEach(d => { calendarHtml += `<div class="calendar-day-header">${d}</div>`; });
-  for (let i = 0; i < firstDay; i++) { calendarHtml += '<div class="calendar-day empty"></div>'; }
-  const today = new Date();
-  for (let day = 1; day <= daysInMonth; day++) {
-    const status = statusMap[day];
-    const isToday = (today.getDate() === day && today.getMonth() + 1 === bulan && today.getFullYear() === tahun);
-    let cls = 'calendar-day';
-    if (status === 'Hadir') cls += ' hadir';
-    else if (status === 'Izin') cls += ' izin';
-    else if (status === 'Sakit') cls += ' sakit';
-    else if (status === 'Alpha') cls += ' alpha';
-    if (isToday) cls += ' today';
-    calendarHtml += `<div class="${cls}">${day}</div>`;
-  }
-  calendarHtml += '</div>';
-  
-  // Build table
-  let html = `
-    <div class="mini-stats">
-      <div class="mini-stat green"><div class="label">Hadir</div><div class="value">${totalHadir}</div></div>
-      <div class="mini-stat orange"><div class="label">Izin</div><div class="value">${totalIzin}</div></div>
-      <div class="mini-stat"><div class="label">Sakit</div><div class="value">${totalSakit}</div></div>
-      <div class="mini-stat red"><div class="label">Alpha</div><div class="value">${totalAlpha}</div></div>
-    </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📅 Kalender Absensi</div>
-      ${calendarHtml}
-    </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">📋 Detail Harian</div>
-      <table>
-        <tr>
-          <th>Tgl</th>
-          <th>Masuk</th>
-          <th>Pulang</th>
-          <th>Status</th>
-        </tr>
-  `;
-  
-  res.data.forEach(r => {
-    html += `<tr>
-      <td>${r.Tanggal}</td>
-      <td>${r.JamMasuk || '-'}</td>
-      <td>${r.JamPulang || '-'}</td>
-      <td><span class="badge badge-approved">${r.Status || 'Hadir'}</span></td>
-    </tr>`;
-  });
-  
   html += '</table></div>';
   $('rekap-result').innerHTML = html;
 }
 
 // ============ INFO ============
 function renderInfo() {
-  $('content-info').innerHTML = `
-    <div class="card">
-      <div class="card-title"><span class="icon">ℹ️</span> Informasi</div>
-      <div class="tab-buttons">
-        <button class="tab-btn active" onclick="showInfoTab('slip', this)">💰 Slip Gaji</button>
-        <button class="tab-btn" onclick="showInfoTab('shift', this)">🔄 Tukar Shift</button>
-        <button class="tab-btn" onclick="showInfoTab('izin', this)">📝 Izin/Sakit</button>
-      </div>
-      <div id="info-tab-slip"></div>
-      <div id="info-tab-shift" class="hidden"></div>
-      <div id="info-tab-izin" class="hidden"></div>
-    </div>
-  `;
+  $('content-info').innerHTML = '<div class="card"><div class="card-title"><span class="icon">ℹ️</span> Informasi</div><div class="tab-buttons"><button class="tab-btn active" onclick="showInfoTab(\'slip\', this)">💰 Slip Gaji</button><button class="tab-btn" onclick="showInfoTab(\'shift\', this)">🔄 Tukar Shift</button><button class="tab-btn" onclick="showInfoTab(\'izin\', this)">📝 Izin/Sakit</button></div><div id="info-tab-slip"></div><div id="info-tab-shift" class="hidden"></div><div id="info-tab-izin" class="hidden"></div></div>';
   showInfoTab('slip', document.querySelector('.tab-btn'));
 }
 
@@ -922,34 +616,13 @@ async function loadSlipGaji() {
   res.data.forEach(s => {
     let data = {};
     try { data = JSON.parse(s.DataGaji); } catch(e) {}
-    html += `
-      <div class="slip-item">
-        <div class="header">
-          <b>📅 ${s.Bulan} ${s.Tahun}</b>
-          <span class="badge badge-approved">${s.Status}</span>
-        </div>
-        <div style="font-size:13px;">
-          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Gaji Pokok</span><span>Rp ${(data.gaji_pokok||0).toLocaleString()}</span></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tunjangan</span><span style="color:var(--success);">+Rp ${(data.tunjangan||0).toLocaleString()}</span></div>
-          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Potongan</span><span style="color:var(--danger);">-Rp ${(data.potongan||0).toLocaleString()}</span></div>
-        </div>
-        <div class="total"> Total: Rp ${(data.total||0).toLocaleString()}</div>
-      </div>
-    `;
+    html += '<div class="slip-item"><div class="header"><b>📅 ' + s.Bulan + ' ' + s.Tahun + '</b><span class="badge badge-approved">' + s.Status + '</span></div><div style="font-size:13px;"><div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Gaji Pokok</span><span>Rp ' + (data.gaji_pokok || 0).toLocaleString() + '</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tunjangan</span><span style="color:var(--success);">+Rp ' + (data.tunjangan || 0).toLocaleString() + '</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Potongan</span><span style="color:var(--danger);">-Rp ' + (data.potongan || 0).toLocaleString() + '</span></div></div><div class="total">💰 Total: Rp ' + (data.total || 0).toLocaleString() + '</div></div>';
   });
   $('info-tab-slip').innerHTML = html;
 }
 
 function renderShiftForm() {
-  $('info-tab-shift').innerHTML = `
-    <h3 style="margin-bottom:10px;color:var(--primary);">🔄 Tukar Shift</h3>
-    <div class="form-group"><label>📅 Tanggal Shift Asli</label><input type="date" id="sh-tgl1"></div>
-    <div class="form-group"><label>📅 Tanggal Pengganti</label><input type="date" id="sh-tgl2"></div>
-    <div class="form-group"><label> Nama Pengganti</label><input type="text" id="sh-nama" placeholder="Nama rekan pengganti"></div>
-    <div class="form-group"><label>📝 Keterangan</label><textarea id="sh-ket" placeholder="Alasan tukar shift..."></textarea></div>
-    <button class="btn btn-primary" onclick="submitShift()">📤 AJUKAN TUKAR SHIFT</button>
-    <div id="shift-history" style="margin-top:16px;"></div>
-  `;
+  $('info-tab-shift').innerHTML = '<h3 style="margin-bottom:10px;color:var(--primary);">🔄 Tukar Shift</h3><div class="form-group"><label>📅 Tanggal Shift Asli</label><input type="date" id="sh-tgl1"></div><div class="form-group"><label>📅 Tanggal Pengganti</label><input type="date" id="sh-tgl2"></div><div class="form-group"><label>👤 Nama Pengganti</label><input type="text" id="sh-nama" placeholder="Nama rekan pengganti"></div><div class="form-group"><label>📝 Keterangan</label><textarea id="sh-ket" placeholder="Alasan tukar shift..."></textarea></div><button class="btn btn-primary" onclick="submitShift()">📤 AJUKAN TUKAR SHIFT</button><div id="shift-history" style="margin-top:16px;"></div>';
   loadShiftHistory();
 }
 
@@ -960,7 +633,7 @@ async function submitShift() {
     showLoading('Mengajukan...');
     const res = await api('submitRequest', {
       UserID: currentUser.UserID, Jenis: 'TukarShift',
-      Keterangan: `${ket} | Tgl Asli: ${tgl1} | Tgl Pengganti: ${tgl2} | Pengganti: ${nama}`,
+      Keterangan: ket + ' | Tgl Asli: ' + tgl1 + ' | Tgl Pengganti: ' + tgl2 + ' | Pengganti: ' + nama,
       TanggalShift: tgl1, NamaPengganti: nama
     });
     hideLoading();
@@ -981,34 +654,15 @@ async function loadShiftHistory() {
     $('shift-history').innerHTML = '<div class="empty-state" style="padding:20px;"><div class="text">Belum ada pengajuan</div></div>';
     return;
   }
-  let html = '<h4 style="margin:10px 0;color:var(--primary);"> Riwayat Pengajuan</h4>';
+  let html = '<h4 style="margin:10px 0;color:var(--primary);">📜 Riwayat Pengajuan</h4>';
   res.data.forEach(r => {
-    html += `<div class="slip-item">
-      <div class="header">
-        <span style="font-size:12px;">📅 ${r.Tanggal}</span>
-        <span class="badge badge-${r.Status.toLowerCase()}">${r.Status}</span>
-      </div>
-      <div style="font-size:12px;color:var(--muted);">${r.Keterangan}</div>
-    </div>`;
+    html += '<div class="slip-item"><div class="header"><span style="font-size:12px;">📅 ' + r.Tanggal + '</span><span class="badge badge-' + r.Status.toLowerCase() + '">' + r.Status + '</span></div><div style="font-size:12px;color:var(--muted);">' + r.Keterangan + '</div></div>';
   });
   $('shift-history').innerHTML = html;
 }
 
 function renderIzinForm() {
-  $('info-tab-izin').innerHTML = `
-    <h3 style="margin-bottom:10px;color:var(--primary);">📝 Izin / Sakit</h3>
-    <div class="form-group">
-      <label>🏷️ Jenis</label>
-      <select id="iz-jenis"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select>
-    </div>
-    <div class="form-group"><label>📅 Tanggal</label><input type="date" id="iz-tgl"></div>
-    <div class="form-group"><label>📝 Keterangan</label><textarea id="iz-ket" placeholder="Misal: Menikah / Demam / dll"></textarea></div>
-    <label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti (Surat Dokter / Undangan)</label>
-    <div class="camera-box" id="iz-foto-box" onclick="bukaKameraIzin()">
-      <div><div class="camera-icon"></div><div class="camera-text">Tap untuk foto</div></div>
-    </div>
-    <button class="btn btn-primary" onclick="submitIzin()">📤 KIRIM PENGAJUAN</button>
-  `;
+  $('info-tab-izin').innerHTML = '<h3 style="margin-bottom:10px;color:var(--primary);">📝 Izin / Sakit</h3><div class="form-group"><label>🏷️ Jenis</label><select id="iz-jenis"><option value="Izin">Izin</option><option value="Sakit">Sakit</option></select></div><div class="form-group"><label>📅 Tanggal</label><input type="date" id="iz-tgl"></div><div class="form-group"><label>📝 Keterangan</label><textarea id="iz-ket" placeholder="Misal: Menikah / Demam / dll"></textarea></div><label style="font-weight:600;font-size:13px;margin-bottom:8px;display:block;">📷 Foto Bukti (Surat Dokter / Undangan)</label><div class="camera-box" id="iz-foto-box" onclick="bukaKameraIzin()"><div><div class="camera-icon">📷</div><div class="camera-text">Tap untuk foto</div></div></div><button class="btn btn-primary" onclick="submitIzin()">📤 KIRIM PENGAJUAN</button>';
 }
 
 let fotoIzin = null;
@@ -1019,7 +673,7 @@ function bukaKameraIzin() {
   currentPhotoBase64 = null;
   cameraCallback = (base64) => {
     fotoIzin = base64;
-    $('iz-foto-box').innerHTML = `<img src="${base64}" onclick="openZoom('${base64}')" style="cursor:zoom-in;">`;
+    $('iz-foto-box').innerHTML = '<img src="' + base64 + '" onclick="openZoom(\'' + base64 + '\')" style="cursor:zoom-in;">';
     showToast('✓ Foto bukti tersimpan', 'success');
   };
   show('modal-camera');
@@ -1051,46 +705,7 @@ async function submitIzin() {
 // ============ PROFIL ============
 function renderProfil() {
   const initial = currentUser.NamaLengkap ? currentUser.NamaLengkap.charAt(0).toUpperCase() : '👤';
-  $('content-profil').innerHTML = `
-    <div class="profile-header">
-      <div class="profile-avatar">${initial}</div>
-      <div class="profile-name">${currentUser.NamaLengkap}</div>
-      <div class="profile-username">@${currentUser.Username}</div>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="icon">📍</span> Informasi Pribadi</div>
-      <div style="padding:8px 0;border-bottom:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--muted);">ALAMAT</div>
-        <div style="font-size:14px;">${currentUser.Alamat || '-'}</div>
-      </div>
-      <div style="padding:8px 0;border-bottom:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--muted);">NO. TELEPON</div>
-        <div style="font-size:14px;">${currentUser.NoTelp || '-'}</div>
-      </div>
-      <div style="padding:8px 0;">
-        <div style="font-size:11px;color:var(--muted);">EMAIL</div>
-        <div style="font-size:14px;">${currentUser.Email || '-'}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="icon">ℹ️</span> Informasi Akun</div>
-      <div style="padding:8px 0;border-bottom:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--muted);">USER ID</div>
-        <div style="font-size:14px;font-family:monospace;">${currentUser.UserID}</div>
-      </div>
-      <div style="padding:8px 0;">
-        <div style="font-size:11px;color:var(--muted);">ROLE</div>
-        <div style="font-size:14px;"><span class="badge badge-info">${currentUser.Role}</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <button class="btn btn-danger" onclick="logout()">🚪 LOGOUT</button>
-    </div>
-    <div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;">
-      PT Sentra Bhakti Utama<br>
-      © 2026 - v1.2.0
-    </div>
-  `;
+  $('content-profil').innerHTML = '<div class="profile-header"><div class="profile-avatar">' + initial + '</div><div class="profile-name">' + currentUser.NamaLengkap + '</div><div class="profile-username">@' + currentUser.Username + '</div></div><div class="card"><div class="card-title"><span class="icon">📍</span> Informasi Pribadi</div><div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);">ALAMAT</div><div style="font-size:14px;">' + (currentUser.Alamat || '-') + '</div></div><div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);">NO. TELEPON</div><div style="font-size:14px;">' + (currentUser.NoTelp || '-') + '</div></div><div style="padding:8px 0;"><div style="font-size:11px;color:var(--muted);">EMAIL</div><div style="font-size:14px;">' + (currentUser.Email || '-') + '</div></div></div><div class="card"><div class="card-title"><span class="icon">ℹ️</span> Informasi Akun</div><div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);">USER ID</div><div style="font-size:14px;font-family:monospace;">' + currentUser.UserID + '</div></div><div style="padding:8px 0;"><div style="font-size:11px;color:var(--muted);">ROLE</div><div style="font-size:14px;"><span class="badge badge-info">' + currentUser.Role + '</span></div></div></div><div class="card"><button class="btn btn-danger" onclick="logout()">🚪 LOGOUT</button></div><div style="text-align:center;padding:20px;color:var(--muted);font-size:11px;">PT Sentra Bhakti Utama<br>© 2026 - v1.2.0</div>';
 }
 
 function logout() {
@@ -1109,7 +724,7 @@ function emergencyAction() {
 function closeEmergency() { hide('modal-emergency'); }
 async function sendEmergency(jenis) {
   closeEmergency();
-  showConfirm('⚠️ Konfirmasi Darurat', `Kirim laporan darurat "${jenis}" ke admin?`, async () => {
+  showConfirm('⚠️ Konfirmasi Darurat', 'Kirim laporan darurat "' + jenis + '" ke admin?', async () => {
     showLoading('Mengirim laporan darurat...');
     const res = await api('submitKejadian', {
       UserID: currentUser.UserID,
@@ -1122,7 +737,7 @@ async function sendEmergency(jenis) {
     hideLoading();
     if (res.ok) {
       haptic('success');
-      showToast(' Laporan darurat terkirim ke admin!', 'error');
+      showToast('🚨 Laporan darurat terkirim ke admin!', 'error');
     } else {
       showToast(res.message || 'Gagal', 'error');
     }
