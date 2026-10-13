@@ -1,5 +1,7 @@
 // ============ KONFIGURASI ============
+// PENTING: Ganti URL di bawah ini dengan URL Web App TERBARU dari Google Apps Script Anda!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyuRZrJdryJhx-aD_W7Pyix8bIGyNMJyy3hbj9eau2C6kbkHlpy9Iluaf6AYZ4M-uUQ/exec';
+
 let currentUser = null;
 let currentLocation = null;
 let selectedLocations = [];
@@ -20,8 +22,18 @@ async function api(action, data = {}) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action, ...data, token: localStorage.getItem('sbu_token') })
     });
-    return await res.json();
+    
+    // Cek jika response bukan JSON (misal error 500 dari GAS yang return HTML)
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      return await res.json();
+    } else {
+      const text = await res.text();
+      console.error("Non-JSON response:", text);
+      return { ok: false, message: "Server error: " + text.substring(0, 150) };
+    }
   } catch(e) {
+    console.error("Fetch error:", e);
     showToast('Koneksi gagal: ' + e.message, 'error');
     return { ok: false, message: e.message };
   }
@@ -258,7 +270,7 @@ function switchPage(page) {
   show('content-' + page);
   document.querySelector('.nav-item[data-page="' + page + '"]').classList.add('active');
   if (page === 'rekap') loadRekap();
-  if (page === 'info') { loadInfo(); loadPendingCount(); }
+  if (page === 'info') { renderInfo(); loadPendingCount(); }
   window.scrollTo(0, 0);
   haptic('light');
 }
@@ -551,10 +563,7 @@ async function loadRekap() {
     if (tglParts.length === 3) {
       const day = parseInt(tglParts[0]);
       statusMap[day] = r.Status || 'Hadir';
-      jamMap[day] = {
-        masuk: r.JamMasuk || '-',
-        pulang: r.JamPulang || '-'
-      };
+      jamMap[day] = { masuk: r.JamMasuk || '-', pulang: r.JamPulang || '-' };
     }
   });
   
